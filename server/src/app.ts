@@ -28,6 +28,31 @@ export const buildApp = async (input: BuildAppInput) => {
     .map((item) => item.trim().replace(/\/+$/, ''))
     .filter(Boolean);
 
+  const isAllowedOrigin = (origin: string) => {
+    return allowedOrigins.some((allowed) => {
+      if (allowed === '*' || allowed === origin) {
+        return true;
+      }
+
+      const wildcardMatch = allowed.match(/^(https?:\/\/)\*\.(.+)$/);
+      if (!wildcardMatch) {
+        return false;
+      }
+
+      const [, protocol, domain] = wildcardMatch;
+      if (!origin.startsWith(protocol)) {
+        return false;
+      }
+
+      try {
+        const hostname = new URL(origin).hostname;
+        return hostname === domain || hostname.endsWith(`.${domain}`);
+      } catch {
+        return false;
+      }
+    });
+  };
+
   const app = Fastify({
     logger: {
       level: 'info'
@@ -38,7 +63,7 @@ export const buildApp = async (input: BuildAppInput) => {
   await app.register(cors, {
     origin: (origin, callback) => {
       const normalized = origin?.replace(/\/+$/, '');
-      if (!origin || (normalized && allowedOrigins.includes(normalized))) {
+      if (!origin || (normalized && isAllowedOrigin(normalized))) {
         callback(null, true);
         return;
       }

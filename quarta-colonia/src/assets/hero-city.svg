@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800" role="img" aria-labelledby="t d">
+  <title id="t">Paisagem urbana da Quarta Colônia</title>
+  <desc id="d">Ilustração de prédios e colinas ao entardecer</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#183b70" />
+      <stop offset="55%" stop-color="#355f95" />
+      <stop offset="100%" stop-color="#8da6c4" />
+    </linearGradient>
+    <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b3f5f" />
+      <stop offset="100%" stop-color="#1b2940" />
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="800" fill="url(#sky)" />
+  <path d="M0 520 C160 480 260 530 420 500 C560 475 710 545 860 505 C1020 465 1180 530 1400 495 L1400 800 L0 800 Z" fill="url(#land)" />
+  <g fill="#243753">
+    <rect x="90" y="430" width="70" height="220" />
+    <rect x="170" y="390" width="90" height="260" />
+    <rect x="280" y="420" width="110" height="230" />
+    <rect x="420" y="360" width="140" height="290" />
+    <rect x="590" y="405" width="80" height="245" />
+    <rect x="700" y="370" width="120" height="280" />
+    <rect x="840" y="420" width="95" height="230" />
+    <rect x="960" y="395" width="120" height="255" />
+    <rect x="1110" y="375" width="100" height="275" />
+    <rect x="1230" y="430" width="70" height="220" />
+  </g>
+  <g fill="#ffd87a">
+    <circle cx="220" cy="130" r="32" />
+    <rect x="110" y="470" width="8" height="8" />
+    <rect x="128" y="470" width="8" height="8" />
+    <rect x="186" y="430" width="8" height="8" />
+    <rect x="204" y="430" width="8" height="8" />
+    <rect x="314" y="450" width="8" height="8" />
+    <rect x="332" y="450" width="8" height="8" />
+    <rect x="460" y="390" width="10" height="10" />
+    <rect x="484" y="390" width="10" height="10" />
+    <rect x="730" y="410" width="9" height="9" />
+    <rect x="755" y="410" width="9" height="9" />
+    <rect x="986" y="420" width="9" height="9" />
+    <rect x="1012" y="420" width="9" height="9" />
+    <rect x="1140" y="400" width="9" height="9" />
+    <rect x="1166" y="400" width="9" height="9" />
+  </g>
+</svg>

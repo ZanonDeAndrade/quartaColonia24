@@ -1,0 +1,10 @@
+{
+  "name": "@repo/ui",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./theme.css": "./theme.css",
+    "./tailwind-preset": "./tailwind-preset.cjs",
+    "./components.json": "./components.json"
+  }
+}

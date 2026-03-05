@@ -1,0 +1,102 @@
+:root {
+  --font-sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  --font-serif: "Georgia", "Times New Roman", serif;
+
+  --background: 216 26% 95%;
+  --foreground: 220 58% 18%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 220 58% 18%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 58% 18%;
+
+  --primary: 216 64% 23%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 216 22% 92%;
+  --secondary-foreground: 216 47% 26%;
+
+  --muted: 215 21% 91%;
+  --muted-foreground: 217 23% 46%;
+
+  --accent: 216 29% 95%;
+  --accent-foreground: 216 47% 26%;
+
+  --destructive: 0 74% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 216 22% 87%;
+  --input: 216 22% 87%;
+  --ring: 212 62% 32%;
+
+  --radius: 0.5rem;
+  --shadow-soft: 0 1px 2px 0 rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 10px 24px rgba(15, 23, 42, 0.08);
+
+  --portal-navy: 216 64% 23%;
+  --portal-navy-border: 215 48% 32%;
+  --portal-sidebar: 223 45% 12%;
+  --portal-red: 359 87% 51%;
+  --portal-surface: 216 26% 95%;
+  --portal-surface-muted: 216 22% 92%;
+  --portal-text: 220 58% 18%;
+  --portal-text-muted: 217 23% 46%;
+  --portal-footer: 216 64% 23%;
+  --portal-footer-border: 214 40% 38%;
+  --portal-footer-text: #dde7fb;
+
+  --category-local: #1a4b8f;
+  --category-politica: #2456a3;
+  --category-esportes: #1ca362;
+  --category-internacional: #7e3bbd;
+  --category-economia: #1fa96e;
+  --category-cultura: #0f7e95;
+  --category-opiniao: #f1781f;
+  --category-geral: hsl(var(--portal-text));
+
+  --portal-placeholder: #a1adc1;
+  --portal-soft-border: #d4dae4;
+  --portal-hover-surface: #e5ebf7;
+  --portal-opinion-accent: #f1781f;
+
+  --status-success-fg: #0f7a4c;
+  --status-published-bg: #dcfce7;
+  --status-published-fg: #166534;
+  --status-draft-bg: #fef3c7;
+  --status-draft-fg: #92400e;
+}
+
+.dark {
+  --background: 220 32% 10%;
+  --foreground: 213 31% 91%;
+  --card: 220 32% 12%;
+  --card-foreground: 213 31% 91%;
+  --popover: 220 32% 12%;
+  --popover-foreground: 213 31% 91%;
+  --primary: 212 64% 62%;
+  --primary-foreground: 220 58% 18%;
+  --secondary: 218 24% 17%;
+  --secondary-foreground: 213 31% 91%;
+  --muted: 218 24% 16%;
+  --muted-foreground: 217 16% 66%;
+  --accent: 218 24% 17%;
+  --accent-foreground: 213 31% 91%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 213 31% 91%;
+  --border: 216 26% 22%;
+  --input: 216 26% 22%;
+  --ring: 212 64% 62%;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+}

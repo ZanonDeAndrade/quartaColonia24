@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/vite-env.d.ts",
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/index.css",
+    "src/types/news.ts",
+    "src/lib/api.ts",
+    "src/lib/category.ts",
+    "src/lib/date.ts",
+    "src/lib/news-normalizer.ts",
+    "src/hooks/useNewsDetail.ts",
+    "src/hooks/usePublishedNews.ts",
+    "src/components/portal/**/*.tsx",
+    "src/pages/PortalHome.tsx",
+    "src/pages/NewsDetail.tsx"
+  ]
+}

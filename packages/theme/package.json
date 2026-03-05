@@ -1,0 +1,11 @@
+{
+  "name": "@repo/theme",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./theme.css": "./src/theme.css",
+    "./tailwind-preset": "./tailwind-preset.cjs",
+    ".": "./src/index.ts"
+  }
+}

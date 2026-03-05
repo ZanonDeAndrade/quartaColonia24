@@ -1,0 +1,21 @@
+{
+  "name": "quarta-colonia-monorepo",
+  "private": true,
+  "workspaces": [
+    "server",
+    "adm",
+    "quarta-colonia",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n server,site,adm -c blue,green,magenta \"npm run dev:server\" \"npm run dev:site\" \"npm run dev:adm\"",
+    "dev:server": "npm run dev -w server",
+    "dev:site": "npm run dev -w quarta-colonia",
+    "dev:adm": "npm run dev -w adm",
+    "build": "npm run build -w server && npm run build -w quarta-colonia && npm run build -w adm",
+    "test": "npm run test -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

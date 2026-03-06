@@ -5,6 +5,7 @@ import { buildApp } from './app.js';
 
 const start = async () => {
   const env = getEnv();
+  const port = Number(process.env.PORT) || env.PORT || 3000;
   const services = createDefaultServices(env);
   const app = await buildApp({
     env: {
@@ -15,8 +16,8 @@ const start = async () => {
   });
 
   try {
-    await app.listen({ port: env.PORT, host: '0.0.0.0' });
-    app.log.info(`API running on http://localhost:${env.PORT}`);
+    await app.listen({ port, host: '0.0.0.0' });
+    app.log.info(`API running on http://localhost:${port}`);
   } catch (error) {
     app.log.error(error, 'failed to start server');
     process.exit(1);

@@ -1,30 +1,5 @@
 import { z } from 'zod';
-
-const defaultCorsOrigins = [
-  'http://localhost:5173',
-  'https://quarta-colonia24-quarta-colonia.vercel.app',
-  'https://quarta-colonia24-adm.vercel.app'
-] as const;
-
-const parseCorsOrigins = (value: string | undefined): string[] => {
-  if (!value) return [...defaultCorsOrigins];
-
-  const origins = value
-    .split(',')
-    .map((item) => item.trim().replace(/\/+$/, ''))
-    .filter(Boolean);
-
-  if (origins.length === 0) return [...defaultCorsOrigins];
-
-  const invalidOrigin = origins.find((origin) => !/^https?:\/\/[^/\s]+$/i.test(origin));
-  if (invalidOrigin) {
-    throw new Error(
-      `Invalid environment variables. Check server/.env. Details: CORS_ORIGINS contains invalid origin "${invalidOrigin}".`
-    );
-  }
-
-  return Array.from(new Set(origins));
-};
+import { parseAllowedOrigins } from './cors.js';
 
 const rawEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -49,7 +24,6 @@ const rawEnvSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
   CORS_ORIGINS: z.string().optional(),
-  CORS_ORIGIN: z.string().optional(),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(5 * 1024 * 1024)
 });
 
@@ -91,7 +65,7 @@ export const getEnv = (): Env => {
     );
   }
 
-  const corsOrigins = parseCorsOrigins(parsed.data.CORS_ORIGINS ?? parsed.data.CORS_ORIGIN);
+  const corsOrigins = parseAllowedOrigins(parsed.data.CORS_ORIGINS);
 
   cachedEnv = {
     NODE_ENV: parsed.data.NODE_ENV,

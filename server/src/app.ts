@@ -24,6 +24,8 @@ interface BuildAppInput {
 }
 
 export const buildApp = async (input: BuildAppInput) => {
+  const normalizedAllowedOrigins = input.env.CORS_ORIGINS.map((origin) => origin.replace(/\/+$/, ''));
+
   const app = Fastify({
     logger: {
       level: 'info'
@@ -32,10 +34,25 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: input.env.CORS_ORIGINS,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      app.log.warn({ origin: normalizedOrigin }, 'Blocked CORS origin');
+      callback(new Error('Origin not allowed by CORS'), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    credentials: true,
+    optionsSuccessStatus: 204
   });
   await app.register(rateLimit, {
     global: false,

@@ -207,7 +207,37 @@ describe('API', () => {
       expect(preflight.headers['access-control-allow-methods']).toContain('OPTIONS');
       expect(preflight.headers['access-control-allow-headers']).toContain('Content-Type');
       expect(preflight.headers['access-control-allow-headers']).toContain('Authorization');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: endpoint,
+        headers: {
+          origin
+        }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['access-control-allow-origin']).toBe(origin);
+      expect(response.headers['access-control-allow-credentials']).toBe('true');
     }
+
+    await app.close();
+  });
+
+  it('should block CORS for non-whitelisted origins', async () => {
+    const { app } = await createTestContext();
+
+    const preflight = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/news',
+      headers: {
+        origin: 'https://attacker.example',
+        'access-control-request-method': 'GET'
+      }
+    });
+
+    expect(preflight.statusCode).toBe(500);
+    expect(preflight.headers['access-control-allow-origin']).toBeUndefined();
 
     await app.close();
   });

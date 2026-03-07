@@ -9,7 +9,7 @@ const start = async () => {
   const services = createDefaultServices(env);
   const app = await buildApp({
     env: {
-      CORS_ORIGIN: env.CORS_ORIGIN,
+      CORS_ORIGINS: env.CORS_ORIGINS,
       UPLOAD_MAX_BYTES: env.UPLOAD_MAX_BYTES
     },
     services

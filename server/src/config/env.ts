@@ -1,5 +1,31 @@
 import { z } from 'zod';
 
+const defaultCorsOrigins = [
+  'http://localhost:5173',
+  'https://quarta-colonia24-quarta-colonia.vercel.app',
+  'https://quarta-colonia24-adm.vercel.app'
+] as const;
+
+const parseCorsOrigins = (value: string | undefined): string[] => {
+  if (!value) return [...defaultCorsOrigins];
+
+  const origins = value
+    .split(',')
+    .map((item) => item.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+  if (origins.length === 0) return [...defaultCorsOrigins];
+
+  const invalidOrigin = origins.find((origin) => !/^https?:\/\/[^/\s]+$/i.test(origin));
+  if (invalidOrigin) {
+    throw new Error(
+      `Invalid environment variables. Check server/.env. Details: CORS_ORIGINS contains invalid origin "${invalidOrigin}".`
+    );
+  }
+
+  return Array.from(new Set(origins));
+};
+
 const rawEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -22,7 +48,8 @@ const rawEnvSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
-  CORS_ORIGIN: z.string().min(1),
+  CORS_ORIGINS: z.string().optional(),
+  CORS_ORIGIN: z.string().optional(),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(5 * 1024 * 1024)
 });
 
@@ -39,7 +66,7 @@ export interface Env {
   JWT_REFRESH_SECRET: string;
   JWT_ACCESS_EXPIRES_IN: string;
   JWT_REFRESH_EXPIRES_IN: string;
-  CORS_ORIGIN: string;
+  CORS_ORIGINS: string[];
   UPLOAD_MAX_BYTES: number;
 }
 
@@ -64,6 +91,8 @@ export const getEnv = (): Env => {
     );
   }
 
+  const corsOrigins = parseCorsOrigins(parsed.data.CORS_ORIGINS ?? parsed.data.CORS_ORIGIN);
+
   cachedEnv = {
     NODE_ENV: parsed.data.NODE_ENV,
     PORT: parsed.data.PORT,
@@ -77,7 +106,7 @@ export const getEnv = (): Env => {
     JWT_REFRESH_SECRET: parsed.data.JWT_REFRESH_SECRET,
     JWT_ACCESS_EXPIRES_IN: parsed.data.JWT_ACCESS_EXPIRES_IN,
     JWT_REFRESH_EXPIRES_IN: parsed.data.JWT_REFRESH_EXPIRES_IN,
-    CORS_ORIGIN: parsed.data.CORS_ORIGIN,
+    CORS_ORIGINS: corsOrigins,
     UPLOAD_MAX_BYTES: parsed.data.UPLOAD_MAX_BYTES
   };
 

@@ -19,40 +19,11 @@ import { registerPublicSponsorsRoutes } from './modules/sponsors/public-sponsors
 import { SponsorsController } from './modules/sponsors/sponsors.controller.js';
 
 interface BuildAppInput {
-  env: Pick<Env, 'CORS_ORIGIN' | 'UPLOAD_MAX_BYTES'>;
+  env: Pick<Env, 'CORS_ORIGINS' | 'UPLOAD_MAX_BYTES'>;
   services: AppServices;
 }
 
 export const buildApp = async (input: BuildAppInput) => {
-  const allowedOrigins = input.env.CORS_ORIGIN.split(',')
-    .map((item) => item.trim().replace(/\/+$/, ''))
-    .filter(Boolean);
-
-  const isAllowedOrigin = (origin: string) => {
-    return allowedOrigins.some((allowed) => {
-      if (allowed === '*' || allowed === origin) {
-        return true;
-      }
-
-      const wildcardMatch = allowed.match(/^(https?:\/\/)\*\.(.+)$/);
-      if (!wildcardMatch) {
-        return false;
-      }
-
-      const [, protocol, domain] = wildcardMatch;
-      if (!origin.startsWith(protocol)) {
-        return false;
-      }
-
-      try {
-        const hostname = new URL(origin).hostname;
-        return hostname === domain || hostname.endsWith(`.${domain}`);
-      } catch {
-        return false;
-      }
-    });
-  };
-
   const app = Fastify({
     logger: {
       level: 'info'
@@ -61,14 +32,9 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: (origin, callback) => {
-      const normalized = origin?.replace(/\/+$/, '');
-      if (!origin || (normalized && isAllowedOrigin(normalized))) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error('Origin not allowed by CORS'), false);
-    },
+    origin: input.env.CORS_ORIGINS,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   });
   await app.register(rateLimit, {

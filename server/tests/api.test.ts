@@ -45,7 +45,11 @@ const createTestContext = async () => {
 
   const app = await buildApp({
     env: {
-      CORS_ORIGIN: 'http://localhost:5173',
+      CORS_ORIGINS: [
+        'http://localhost:5173',
+        'https://quarta-colonia24-quarta-colonia.vercel.app',
+        'https://quarta-colonia24-adm.vercel.app'
+      ],
       UPLOAD_MAX_BYTES: 1024 * 1024
     },
     services: {
@@ -176,6 +180,34 @@ describe('API', () => {
     const body = response.json();
     expect(body.items).toHaveLength(1);
     expect(body.items[0].status).toBe('published');
+
+    await app.close();
+  });
+
+  it('should return CORS headers for allowed origins in public endpoints', async () => {
+    const { app } = await createTestContext();
+    const origin = 'https://quarta-colonia24-quarta-colonia.vercel.app';
+    const endpoints = ['/api/news', '/api/columns', '/api/sponsors'];
+
+    for (const endpoint of endpoints) {
+      const preflight = await app.inject({
+        method: 'OPTIONS',
+        url: endpoint,
+        headers: {
+          origin,
+          'access-control-request-method': 'GET',
+          'access-control-request-headers': 'Content-Type, Authorization'
+        }
+      });
+
+      expect(preflight.statusCode).toBe(204);
+      expect(preflight.headers['access-control-allow-origin']).toBe(origin);
+      expect(preflight.headers['access-control-allow-credentials']).toBe('true');
+      expect(preflight.headers['access-control-allow-methods']).toContain('GET');
+      expect(preflight.headers['access-control-allow-methods']).toContain('OPTIONS');
+      expect(preflight.headers['access-control-allow-headers']).toContain('Content-Type');
+      expect(preflight.headers['access-control-allow-headers']).toContain('Authorization');
+    }
 
     await app.close();
   });

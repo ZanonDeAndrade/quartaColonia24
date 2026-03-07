@@ -1,7 +1,8 @@
 export const allowedOrigins = [
   'http://localhost:5173',
   'https://quarta-colonia24-quarta-colonia.vercel.app',
-  'https://quarta-colonia24-adm.vercel.app'
+  'https://quarta-colonia24-adm.vercel.app',
+  'https://quartacolonia24horas.com.br'
 ] as const;
 
 const originPattern = /^https?:\/\/[^/\s]+$/i;

@@ -8,11 +8,46 @@ interface ApiNewsDetailEnvelope {
   data?: ApiNewsItem;
 }
 
+interface ApiNewsListEnvelope {
+  items?: ApiNewsItem[];
+  nextCursor?: string | null;
+}
+
 interface UseNewsDetailResult {
   data: PortalNewsItem | null;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+}
+
+const isRouteOr404Error = (error: unknown) =>
+  error instanceof Error &&
+  (error.message.includes("Route not found") || error.message.includes("HTTP 404"));
+
+async function findBySlugFromList(slug: string) {
+  const pageSize = 50;
+  let cursor: string | null | undefined;
+
+  for (let page = 0; page < 20; page += 1) {
+    const query = cursor
+      ? `?pageSize=${pageSize}&cursor=${encodeURIComponent(cursor)}`
+      : `?pageSize=${pageSize}`;
+    const response = await apiGet<ApiNewsListEnvelope>(`/api/news${query}`);
+    const items = Array.isArray(response?.items) ? response.items : [];
+    const found = items.find((item) => item.slug === slug);
+
+    if (found) {
+      return found;
+    }
+
+    if (!response.nextCursor) {
+      break;
+    }
+
+    cursor = response.nextCursor;
+  }
+
+  return null;
 }
 
 export function useNewsDetail(slug?: string): UseNewsDetailResult {
@@ -32,7 +67,31 @@ export function useNewsDetail(slug?: string): UseNewsDetailResult {
     setError(null);
 
     try {
-      const response = await apiGet<ApiNewsItem | ApiNewsDetailEnvelope>(`/api/news/slug/${slug}`);
+      let response: ApiNewsItem | ApiNewsDetailEnvelope;
+
+      try {
+        response = await apiGet<ApiNewsItem | ApiNewsDetailEnvelope>(`/api/news/slug/${slug}`);
+      } catch (primaryError) {
+        if (!isRouteOr404Error(primaryError)) {
+          throw primaryError;
+        }
+
+        try {
+          response = await apiGet<ApiNewsItem | ApiNewsDetailEnvelope>(`/api/news/${slug}`);
+        } catch (legacyError) {
+          if (!isRouteOr404Error(legacyError)) {
+            throw legacyError;
+          }
+
+          const itemFromList = await findBySlugFromList(slug);
+          if (!itemFromList) {
+            throw new Error("Noticia nao encontrada.");
+          }
+
+          response = itemFromList;
+        }
+      }
+
       const envelope = response as ApiNewsDetailEnvelope;
       const payload = envelope.item ?? envelope.data ?? (response as ApiNewsItem);
       setData(payload ? normalizeNews(payload) : null);

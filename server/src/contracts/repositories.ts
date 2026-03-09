@@ -54,8 +54,8 @@ export interface INewsRepository {
   listPublishedForSitemap(): Promise<Array<Pick<NewsEntity, 'slug' | 'updatedAt' | 'publishedAt'>>>;
   getPublishedBySlug(slug: string): Promise<NewsEntity | null>;
   listAdmin(input: ListAdminNewsInput): Promise<PaginationResult<NewsEntity>>;
-  getById(id: string): Promise<NewsEntity | null>;
-  getBySlug(slug: string): Promise<NewsEntity | null>;
+  findById(id: string): Promise<NewsEntity | null>;
+  findBySlug(slug: string): Promise<NewsEntity | null>;
   create(input: CreateNewsInput): Promise<NewsEntity>;
   update(id: string, input: UpdateNewsInput): Promise<NewsEntity>;
   delete(id: string): Promise<void>;

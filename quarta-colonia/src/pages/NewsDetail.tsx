@@ -74,8 +74,8 @@ export function NewsDetail() {
     [data?.content, data?.excerpt],
   );
   const seoImage = useMemo(
-    () => data?.imageVariants.hero ?? data?.imageVariants.card ?? data?.imageUrl ?? "",
-    [data?.imageUrl, data?.imageVariants.card, data?.imageVariants.hero],
+    () => data?.imageVariants.hero ?? data?.imageUrl ?? "",
+    [data?.imageUrl, data?.imageVariants.hero],
   );
 
   const shareLinks = useMemo(() => {

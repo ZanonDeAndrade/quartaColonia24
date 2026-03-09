@@ -4,6 +4,17 @@ function getBaseUrl() {
   return (import.meta.env.VITE_API_URL ?? DEFAULT_API_URL).replace(/\/+$/, "");
 }
 
+function buildApiUrl(path: string) {
+  const baseUrl = getBaseUrl();
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (baseUrl.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${baseUrl}${normalizedPath.slice(4)}`;
+  }
+
+  return `${baseUrl}${normalizedPath}`;
+}
+
 async function parseJsonOrNull(response: Response) {
   const text = await response.text();
   if (!text) return null;
@@ -15,7 +26,7 @@ async function parseJsonOrNull(response: Response) {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${getBaseUrl()}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

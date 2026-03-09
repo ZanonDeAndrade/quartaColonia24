@@ -8,6 +8,17 @@ export class ApiError extends Error {
 }
 
 const ensureNoTrailingSlash = (url) => url.replace(/\/+$/, '');
+const normalizePath = (path) => (path.startsWith('/') ? path : `/${path}`);
+
+const buildRequestUrl = (baseUrl, path) => {
+  const normalizedPath = normalizePath(path);
+
+  if (baseUrl.endsWith('/api') && normalizedPath.startsWith('/api/')) {
+    return `${baseUrl}${normalizedPath.slice(4)}`;
+  }
+
+  return `${baseUrl}${normalizedPath}`;
+};
 
 const parseJsonIfAny = async (response) => {
   const contentType = response.headers.get('content-type') || '';
@@ -43,7 +54,7 @@ export const createApiClient = ({
       }
     }
 
-    let response = await fetch(`${safeBaseUrl}${path}`, {
+    let response = await fetch(buildRequestUrl(safeBaseUrl, path), {
       ...options,
       headers
     });
@@ -53,7 +64,7 @@ export const createApiClient = ({
       if (!refreshToken) {
         clearTokens?.();
       } else {
-        const refreshResponse = await fetch(`${safeBaseUrl}/api/auth/refresh`, {
+        const refreshResponse = await fetch(buildRequestUrl(safeBaseUrl, '/api/auth/refresh'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -74,7 +85,7 @@ export const createApiClient = ({
             }
             retryHeaders.set('Authorization', `Bearer ${refreshed.accessToken}`);
 
-            response = await fetch(`${safeBaseUrl}${path}`, {
+            response = await fetch(buildRequestUrl(safeBaseUrl, path), {
               ...options,
               headers: retryHeaders
             });

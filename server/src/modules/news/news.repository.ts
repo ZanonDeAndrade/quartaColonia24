@@ -1,5 +1,6 @@
 import { FieldValue, type CollectionReference, type Firestore } from 'firebase-admin/firestore';
 import { AppError } from '../../common/errors.js';
+import { removeUndefined } from '../../common/remove-undefined.js';
 import type {
   CreateNewsInput,
   INewsRepository,
@@ -126,28 +127,35 @@ export class FirestoreNewsRepository implements INewsRepository {
 
       return { items: page, nextCursor };
     } catch (error) {
-      throw this.wrapFirebaseError(error);
+      throw this.wrapFirebaseError(error, {
+        operation: 'news.listAdmin',
+        filters: {
+          status: input.status ?? null,
+          category: input.category ?? null,
+          hasSearch: Boolean(input.search)
+        }
+      });
     }
   }
 
-  async getById(id: string): Promise<NewsEntity | null> {
+  async findById(id: string): Promise<NewsEntity | null> {
     try {
       const doc = await this.collection.doc(id).get();
       if (!doc.exists) return null;
       return this.mapDoc(doc.id, doc.data() as NewsDoc);
     } catch (error) {
-      throw this.wrapFirebaseError(error);
+      throw this.wrapFirebaseError(error, { operation: 'news.findById', id });
     }
   }
 
-  async getBySlug(slug: string): Promise<NewsEntity | null> {
+  async findBySlug(slug: string): Promise<NewsEntity | null> {
     try {
       const snapshot = await this.collection.where('slug', '==', slug).limit(1).get();
       const doc = snapshot.docs[0];
       if (!doc) return null;
       return this.mapDoc(doc.id, doc.data());
     } catch (error) {
-      throw this.wrapFirebaseError(error);
+      throw this.wrapFirebaseError(error, { operation: 'news.findBySlug', slug });
     }
   }
 
@@ -155,18 +163,21 @@ export class FirestoreNewsRepository implements INewsRepository {
     try {
       const docRef = this.collection.doc();
 
-      const payload: NewsDoc = {
+      const payload = removeUndefined({
         ...input,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         publishedAt: input.publishedAt
-      };
+      }) as NewsDoc;
 
       await docRef.set(payload);
       const created = await docRef.get();
       return this.mapDoc(created.id, created.data() as NewsDoc);
     } catch (error) {
-      throw this.wrapFirebaseError(error);
+      throw this.wrapFirebaseError(error, {
+        operation: 'news.create',
+        fields: Object.keys(input)
+      });
     }
   }
 
@@ -178,17 +189,21 @@ export class FirestoreNewsRepository implements INewsRepository {
         throw new AppError('News not found', 404, 'NEWS_NOT_FOUND');
       }
 
-      const data = {
+      const data = removeUndefined({
         ...input,
         updatedAt: FieldValue.serverTimestamp()
-      };
+      });
 
       await docRef.update(data);
       const updated = await docRef.get();
       return this.mapDoc(updated.id, updated.data() as NewsDoc);
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw this.wrapFirebaseError(error);
+      throw this.wrapFirebaseError(error, {
+        operation: 'news.update',
+        id,
+        fields: Object.keys(input)
+      });
     }
   }
 
@@ -209,7 +224,7 @@ export class FirestoreNewsRepository implements INewsRepository {
       content: doc.content,
       category: doc.category ?? '',
       tags: Array.isArray(doc.tags) ? doc.tags : [],
-      status: doc.status,
+      status: doc.status ?? 'draft',
       imagePath: doc.imagePath ?? doc.coverPath ?? null,
       imageUrl: doc.imageUrl ?? doc.coverUrl ?? null,
       imageVariants: this.parseImageVariants(doc.imageVariants),
@@ -241,8 +256,9 @@ export class FirestoreNewsRepository implements INewsRepository {
     };
   }
 
-  private wrapFirebaseError(error: unknown): AppError {
+  private wrapFirebaseError(error: unknown, context?: Record<string, unknown>): AppError {
     return new AppError('Failed to process news data source', 500, 'FIREBASE_ERROR', {
+      context,
       message: error instanceof Error ? error.message : 'Unknown firebase error'
     });
   }

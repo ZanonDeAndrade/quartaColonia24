@@ -35,12 +35,16 @@ export class FirebaseStorageService implements IStorageService {
 
         const imagePath = path.posix.join('news', `${imageId}-${variant.key}.webp`);
         const file = this.bucket.file(imagePath);
+        const downloadToken = randomUUID();
 
         await file.save(outputBuffer, {
           resumable: false,
           metadata: {
             contentType: 'image/webp',
-            cacheControl: CACHE_CONTROL
+            cacheControl: CACHE_CONTROL,
+            metadata: {
+              firebaseStorageDownloadTokens: downloadToken
+            }
           }
         });
 
@@ -48,12 +52,10 @@ export class FirebaseStorageService implements IStorageService {
           key: variant.key,
           width: variant.width,
           path: imagePath,
-          url: this.buildPublicUrl(imagePath)
+          url: this.buildDownloadUrl(imagePath, downloadToken)
         };
       })
     );
-
-    await this.deletePreviousPaths(input.previousImagePath, input.previousImagePaths);
 
     const thumbnail = uploads.find((item) => item.key === 'thumbnail');
     const card = uploads.find((item) => item.key === 'card');
@@ -126,10 +128,6 @@ export class FirebaseStorageService implements IStorageService {
     return `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodeURIComponent(imagePath)}?alt=media&token=${downloadToken}`;
   }
 
-  private buildPublicUrl(imagePath: string) {
-    return `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodeURIComponent(imagePath)}?alt=media`;
-  }
-
   private async uploadImage(
     folder: 'news' | 'sponsors' | 'columns',
     input: {
@@ -165,15 +163,5 @@ export class FirebaseStorageService implements IStorageService {
       imagePath,
       imageUrl: this.buildDownloadUrl(imagePath, downloadToken)
     };
-  }
-
-  private async deletePreviousPaths(previousImagePath?: string | null, previousImagePaths?: string[]) {
-    const paths = new Set<string>();
-    if (previousImagePath) paths.add(previousImagePath);
-    for (const pathValue of previousImagePaths ?? []) {
-      if (pathValue) paths.add(pathValue);
-    }
-
-    await Promise.all([...paths].map((pathValue) => this.deleteIfExists(pathValue)));
   }
 }

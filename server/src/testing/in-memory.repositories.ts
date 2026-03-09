@@ -64,11 +64,11 @@ export class InMemoryNewsRepository implements INewsRepository {
     return { items: paged, nextCursor };
   }
 
-  async getById(id: string): Promise<NewsEntity | null> {
+  async findById(id: string): Promise<NewsEntity | null> {
     return this.items.get(id) ?? null;
   }
 
-  async getBySlug(slug: string): Promise<NewsEntity | null> {
+  async findBySlug(slug: string): Promise<NewsEntity | null> {
     return [...this.items.values()].find((item) => item.slug === slug) ?? null;
   }
 

@@ -1,4 +1,4 @@
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { AppError } from '../../common/errors.js';
 import { toISOStringOrNull } from '../../common/time.js';
@@ -56,6 +56,19 @@ export class NewsController {
     return serializeNews(news);
   }
 
+  async getBySlug(request: FastifyRequest<{ Params: { slug: string } }>, reply: FastifyReply) {
+    const { slug } = request.params;
+    const news = await this.newsService.findBySlug(slug);
+
+    if (!news || news.status !== 'published') {
+      return reply.status(404).send({
+        message: 'News not found'
+      });
+    }
+
+    return reply.send(serializeNews(news));
+  }
+
   async listAdmin(request: FastifyRequest) {
     try {
       const query = adminNewsListQuerySchema.parse(request.query);
@@ -76,8 +89,27 @@ export class NewsController {
 
   async create(request: FastifyRequest) {
     try {
+      request.log.info(
+        {
+          event: 'news.admin.create.incomingPayload',
+          payload: request.body
+        },
+        'news.admin.create.incomingPayload'
+      );
+
       const body = createNewsBodySchema.parse(request.body);
-      const news = await this.newsService.create(body);
+      request.log.info(
+        {
+          event: 'news.admin.create.validatedPayload',
+          payload: body
+        },
+        'news.admin.create.validatedPayload'
+      );
+
+      const news = await this.newsService.create(body, {
+        logger: request.log,
+        requestId: request.id
+      });
       return serializeNews(news);
     } catch (error) {
       this.rethrow(error);
@@ -86,8 +118,29 @@ export class NewsController {
 
   async update(request: FastifyRequest<{ Params: { id: string } }>) {
     try {
+      request.log.info(
+        {
+          event: 'news.admin.update.incomingPayload',
+          id: request.params.id,
+          payload: request.body
+        },
+        'news.admin.update.incomingPayload'
+      );
+
       const body = updateNewsBodySchema.parse(request.body);
-      const news = await this.newsService.update(request.params.id, body);
+      request.log.info(
+        {
+          event: 'news.admin.update.validatedPayload',
+          id: request.params.id,
+          payload: body
+        },
+        'news.admin.update.validatedPayload'
+      );
+
+      const news = await this.newsService.update(request.params.id, body, {
+        logger: request.log,
+        requestId: request.id
+      });
       return serializeNews(news);
     } catch (error) {
       this.rethrow(error);
@@ -97,7 +150,10 @@ export class NewsController {
   async publish(request: FastifyRequest<{ Params: { id: string } }>) {
     try {
       const body = publishNewsBodySchema.parse(request.body);
-      const news = await this.newsService.setPublished(request.params.id, body.published);
+      const news = await this.newsService.setPublished(request.params.id, body.published, {
+        logger: request.log,
+        requestId: request.id
+      });
       return serializeNews(news);
     } catch (error) {
       this.rethrow(error);
@@ -105,7 +161,10 @@ export class NewsController {
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>) {
-    await this.newsService.delete(request.params.id);
+    await this.newsService.delete(request.params.id, {
+      logger: request.log,
+      requestId: request.id
+    });
     return { success: true };
   }
 
@@ -128,11 +187,25 @@ export class NewsController {
       throw new AppError('Image exceeds maximum file size', 413, 'IMAGE_TOO_LARGE');
     }
 
+    request.log.info(
+      {
+        event: 'news.admin.uploadImage.validatedPayload',
+        id: request.params.id,
+        fileName: file.filename,
+        mimeType: file.mimetype,
+        size: buffer.byteLength
+      },
+      'news.admin.uploadImage.validatedPayload'
+    );
+
     const updated = await this.newsService.uploadImage({
       id: request.params.id,
       fileName: file.filename,
       mimeType: file.mimetype,
       buffer
+    }, {
+      logger: request.log,
+      requestId: request.id
     });
 
     return serializeNews(updated);

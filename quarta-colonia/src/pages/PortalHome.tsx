@@ -49,15 +49,16 @@ export function PortalHome() {
         .join(" | ");
     }
 
-    if (data.length === 0) {
-      return "Prefeitura anuncia nova praca no centro da cidade com investimento de R$ 2 milhoes";
+    if (loading) {
+      return "Carregando noticias...";
     }
 
-    return data
-      .slice(0, 2)
-      .map((item) => item.title)
-      .join(" | ");
-  }, [data, filteredNews]);
+    if (data.length === 0) {
+      return "Sem noticias publicadas no momento.";
+    }
+
+    return data.slice(0, 2).map((item) => item.title).join(" | ");
+  }, [data, filteredNews, loading]);
 
   return (
     <div className="qc-page">

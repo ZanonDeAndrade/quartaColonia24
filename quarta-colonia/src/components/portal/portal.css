@@ -269,6 +269,10 @@
   align-items: flex-end;
 }
 
+.qc-hero-card-empty {
+  background: hsl(var(--portal-navy));
+}
+
 .qc-hero-overlay {
   position: absolute;
   inset: 0;

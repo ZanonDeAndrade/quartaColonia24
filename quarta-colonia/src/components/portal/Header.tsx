@@ -45,8 +45,7 @@ export function Header({ onToggleMenu, urgentText }: HeaderProps) {
 
         <div className="qc-urgent-text-wrap">
           <div className="qc-urgent-text">
-            {urgentText ??
-              "Prefeitura anuncia nova praca no centro da cidade com investimento de R$ 2 milhoes"}
+            {urgentText ?? "Sem noticias publicadas no momento."}
           </div>
         </div>
       </div>

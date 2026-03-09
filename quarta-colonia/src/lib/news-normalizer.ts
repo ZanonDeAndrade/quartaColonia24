@@ -16,11 +16,10 @@ export function extractNewsList(response: ApiNewsEnvelope | ApiNewsItem[]) {
 
 export function normalizeNews(item: ApiNewsItem): PortalNewsItem {
   const title = stringValue(item.title) || stringValue(item.headline) || "Sem titulo";
-  const excerpt =
-    stringValue(item.excerpt) ||
-    stringValue(item.summary) ||
-    "Materia cadastrada no painel administrativo, pronta para publicacao.";
-  const content = stringValue(item.content) || stringValue(item.body) || excerpt;
+  const rawContent = stringValue(item.content) || stringValue(item.body);
+  const rawExcerpt = stringValue(item.excerpt) || stringValue(item.summary);
+  const excerpt = isLegacyPlaceholderExcerpt(rawExcerpt) ? buildExcerptFromContent(rawContent) : rawExcerpt;
+  const content = rawContent || excerpt;
   const category = stringValue(item.category) || stringValue(item.section) || "GERAL";
   const author = stringValue(item.author) || stringValue(item.authorName) || "Redacao";
   const imageUrl =
@@ -67,4 +66,33 @@ function slugify(value: string) {
 
 function isValidDate(value: string) {
   return !Number.isNaN(new Date(value).getTime());
+}
+
+function buildExcerptFromContent(content: string) {
+  if (!content) return "";
+
+  const plain = content
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!plain) return "";
+  if (plain.length <= 180) return plain;
+  return `${plain.slice(0, 177).trimEnd()}...`;
+}
+
+function isLegacyPlaceholderExcerpt(value: string) {
+  if (!value) return true;
+
+  const normalizedValue = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\.$/, "");
+
+  return normalizedValue === "materia cadastrada no painel administrativo, pronta para publicacao";
 }

@@ -8,7 +8,7 @@ export function Footer() {
       <div className="grid w-full grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[1fr_0.72fr_140px_1fr] md:items-center md:gap-4 md:px-6 lg:px-8">
         <section aria-labelledby="footer-about-title">
           <h3 className="mb-1 text-base font-semibold" id="footer-about-title">
-            Voz da Quarta Colonia
+            Quarta Colônia 24 Horas
           </h3>
           <p className="break-words text-sm leading-5 text-primary-foreground/80">
             O portal de noticias mais completo da sua regiao. Informacao com credibilidade.

@@ -190,8 +190,6 @@ export const buildApp = async (input: BuildAppInput) => {
     return reply.send(xml);
   });
 
-  app.get('/health', async () => ({ ok: true }));
-
   app.setErrorHandler((error, request, reply) => {
     const requestId = request.id;
 

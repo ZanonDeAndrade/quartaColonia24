@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { getEnv } from './config/env.js';
 import { createDefaultServices } from './factories/create-services.js';
 import { buildApp } from './app.js';
+import { healthRoutes } from './routes/health.routes.js';
 
 const start = async () => {
   const env = getEnv();
@@ -15,6 +16,7 @@ const start = async () => {
     },
     services
   });
+  await app.register(healthRoutes);
 
   try {
     await app.listen({ port, host: '0.0.0.0' });

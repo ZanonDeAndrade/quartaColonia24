@@ -4,6 +4,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
 import type { Env } from './config/env.js';
+import { isAllowedOrigin, normalizeOrigin } from './config/cors.js';
 import { isAppError } from './common/errors.js';
 import type { AppServices } from './factories/create-services.js';
 import { AuthController } from './modules/auth/auth.controller.js';
@@ -24,7 +25,7 @@ interface BuildAppInput {
 }
 
 export const buildApp = async (input: BuildAppInput) => {
-  const normalizedAllowedOrigins = input.env.CORS_ORIGINS.map((origin) => origin.replace(/\/+$/, ''));
+  const normalizedAllowedOrigins = input.env.CORS_ORIGINS.map((origin) => normalizeOrigin(origin));
 
   const app = Fastify({
     logger: {
@@ -40,8 +41,8 @@ export const buildApp = async (input: BuildAppInput) => {
         return;
       }
 
-      const normalizedOrigin = origin.replace(/\/+$/, '');
-      if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
+      const normalizedOrigin = normalizeOrigin(origin);
+      if (isAllowedOrigin(normalizedOrigin, normalizedAllowedOrigins)) {
         callback(null, true);
         return;
       }

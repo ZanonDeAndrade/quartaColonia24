@@ -47,6 +47,7 @@ const createTestContext = async () => {
     env: {
       CORS_ORIGINS: [
         'http://localhost:5173',
+        'http://localhost:5174',
         'https://quarta-colonia24-quarta-colonia.vercel.app',
         'https://quarta-colonia24-adm.vercel.app'
       ],
@@ -186,39 +187,45 @@ describe('API', () => {
 
   it('should return CORS headers for allowed origins in public endpoints', async () => {
     const { app } = await createTestContext();
-    const origin = 'https://quarta-colonia24-quarta-colonia.vercel.app';
+    const origins = [
+      'http://localhost:5174',
+      'https://quarta-colonia24-quarta-colonia.vercel.app',
+      'https://admin-quarta-colonia.onrender.com'
+    ];
     const endpoints = ['/api/news', '/api/columns', '/api/sponsors'];
 
-    for (const endpoint of endpoints) {
-      const preflight = await app.inject({
-        method: 'OPTIONS',
-        url: endpoint,
-        headers: {
-          origin,
-          'access-control-request-method': 'GET',
-          'access-control-request-headers': 'Content-Type, Authorization'
-        }
-      });
+    for (const origin of origins) {
+      for (const endpoint of endpoints) {
+        const preflight = await app.inject({
+          method: 'OPTIONS',
+          url: endpoint,
+          headers: {
+            origin,
+            'access-control-request-method': 'GET',
+            'access-control-request-headers': 'Content-Type, Authorization'
+          }
+        });
 
-      expect(preflight.statusCode).toBe(204);
-      expect(preflight.headers['access-control-allow-origin']).toBe(origin);
-      expect(preflight.headers['access-control-allow-credentials']).toBe('true');
-      expect(preflight.headers['access-control-allow-methods']).toContain('GET');
-      expect(preflight.headers['access-control-allow-methods']).toContain('OPTIONS');
-      expect(preflight.headers['access-control-allow-headers']).toContain('Content-Type');
-      expect(preflight.headers['access-control-allow-headers']).toContain('Authorization');
+        expect(preflight.statusCode).toBe(204);
+        expect(preflight.headers['access-control-allow-origin']).toBe(origin);
+        expect(preflight.headers['access-control-allow-credentials']).toBe('true');
+        expect(preflight.headers['access-control-allow-methods']).toContain('GET');
+        expect(preflight.headers['access-control-allow-methods']).toContain('OPTIONS');
+        expect(preflight.headers['access-control-allow-headers']).toContain('Content-Type');
+        expect(preflight.headers['access-control-allow-headers']).toContain('Authorization');
 
-      const response = await app.inject({
-        method: 'GET',
-        url: endpoint,
-        headers: {
-          origin
-        }
-      });
+        const response = await app.inject({
+          method: 'GET',
+          url: endpoint,
+          headers: {
+            origin
+          }
+        });
 
-      expect(response.statusCode).toBe(200);
-      expect(response.headers['access-control-allow-origin']).toBe(origin);
-      expect(response.headers['access-control-allow-credentials']).toBe('true');
+        expect(response.statusCode).toBe(200);
+        expect(response.headers['access-control-allow-origin']).toBe(origin);
+        expect(response.headers['access-control-allow-credentials']).toBe('true');
+      }
     }
 
     await app.close();

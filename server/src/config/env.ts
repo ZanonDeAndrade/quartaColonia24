@@ -23,6 +23,7 @@ const rawEnvSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
+  SITE_BASE_URL: z.string().url().default('http://localhost:5173'),
   CORS_ORIGINS: z.string().optional(),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(5 * 1024 * 1024)
 });
@@ -40,6 +41,7 @@ export interface Env {
   JWT_REFRESH_SECRET: string;
   JWT_ACCESS_EXPIRES_IN: string;
   JWT_REFRESH_EXPIRES_IN: string;
+  SITE_BASE_URL: string;
   CORS_ORIGINS: string[];
   UPLOAD_MAX_BYTES: number;
 }
@@ -80,6 +82,7 @@ export const getEnv = (): Env => {
     JWT_REFRESH_SECRET: parsed.data.JWT_REFRESH_SECRET,
     JWT_ACCESS_EXPIRES_IN: parsed.data.JWT_ACCESS_EXPIRES_IN,
     JWT_REFRESH_EXPIRES_IN: parsed.data.JWT_REFRESH_EXPIRES_IN,
+    SITE_BASE_URL: parsed.data.SITE_BASE_URL.replace(/\/+$/, ''),
     CORS_ORIGINS: corsOrigins,
     UPLOAD_MAX_BYTES: parsed.data.UPLOAD_MAX_BYTES
   };

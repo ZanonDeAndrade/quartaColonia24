@@ -1,5 +1,6 @@
 import type {
   ColumnEntity,
+  NewsImageVariants,
   NewsEntity,
   NewsStatus,
   PaginationResult,
@@ -30,6 +31,7 @@ export interface CreateNewsInput {
   status: NewsStatus;
   imagePath: string | null;
   imageUrl: string | null;
+  imageVariants: NewsImageVariants | null;
   publishedAt: Date | null;
 }
 
@@ -43,11 +45,13 @@ export interface UpdateNewsInput {
   status?: NewsStatus;
   imagePath?: string | null;
   imageUrl?: string | null;
+  imageVariants?: NewsImageVariants | null;
   publishedAt?: Date | null;
 }
 
 export interface INewsRepository {
   listPublished(input: ListPublicNewsInput): Promise<PaginationResult<NewsEntity>>;
+  listPublishedForSitemap(): Promise<Array<Pick<NewsEntity, 'slug' | 'updatedAt' | 'publishedAt'>>>;
   getPublishedBySlug(slug: string): Promise<NewsEntity | null>;
   listAdmin(input: ListAdminNewsInput): Promise<PaginationResult<NewsEntity>>;
   getById(id: string): Promise<NewsEntity | null>;
@@ -141,6 +145,7 @@ export interface IRefreshTokenRepository {
 export interface UploadResult {
   imagePath: string;
   imageUrl: string;
+  imageVariants?: NewsImageVariants | null;
 }
 
 export interface IStorageService {
@@ -149,6 +154,7 @@ export interface IStorageService {
     mimeType: string;
     buffer: Buffer;
     previousImagePath?: string | null;
+    previousImagePaths?: string[];
   }): Promise<UploadResult>;
   uploadSponsorImage(input: {
     fileName: string;

@@ -10,7 +10,8 @@ const start = async () => {
   const app = await buildApp({
     env: {
       CORS_ORIGINS: env.CORS_ORIGINS,
-      UPLOAD_MAX_BYTES: env.UPLOAD_MAX_BYTES
+      UPLOAD_MAX_BYTES: env.UPLOAD_MAX_BYTES,
+      SITE_BASE_URL: env.SITE_BASE_URL
     },
     services
   });

@@ -1,6 +1,18 @@
 export type UserRole = 'admin' | 'editor' | 'user';
 export type NewsStatus = 'draft' | 'published';
 
+export interface NewsImageVariant {
+  path: string;
+  url: string;
+  width: number;
+}
+
+export interface NewsImageVariants {
+  thumbnail: NewsImageVariant;
+  card: NewsImageVariant;
+  hero: NewsImageVariant;
+}
+
 export interface NewsEntity {
   id: string;
   title: string;
@@ -12,6 +24,7 @@ export interface NewsEntity {
   status: NewsStatus;
   imagePath: string | null;
   imageUrl: string | null;
+  imageVariants: NewsImageVariants | null;
   publishedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

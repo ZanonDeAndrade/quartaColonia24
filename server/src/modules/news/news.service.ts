@@ -1,10 +1,16 @@
 import { AppError } from '../../common/errors.js';
 import { slugify } from '../../common/slug.js';
 import type { INewsRepository, IStorageService } from '../../contracts/repositories.js';
-import type { NewsStatus } from '../../types/domain.js';
+import type { NewsEntity, NewsImageVariants, NewsStatus } from '../../types/domain.js';
+import { customAlphabet } from 'nanoid';
+import LRUCache from 'lru-cache';
+
+const slugSuffix = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 4);
+const PUBLIC_NEWS_CACHE_TTL_MS = 60_000;
 
 interface CreateNewsInput {
   title: string;
+  slug?: string;
   excerpt?: string;
   content: string;
   category?: string;
@@ -16,6 +22,7 @@ interface CreateNewsInput {
 
 interface UpdateNewsInput {
   title?: string;
+  slug?: string;
   excerpt?: string;
   content?: string;
   category?: string;
@@ -23,16 +30,41 @@ interface UpdateNewsInput {
   status?: NewsStatus;
   imagePath?: string | null;
   imageUrl?: string | null;
+  imageVariants?: NewsImageVariants | null;
 }
 
 export class NewsService {
+  private readonly publicNewsCache = new LRUCache<string, Awaited<ReturnType<INewsRepository['listPublished']>>>({
+    max: 100,
+    maxAge: PUBLIC_NEWS_CACHE_TTL_MS
+  });
+
   constructor(
     private readonly newsRepository: INewsRepository,
     private readonly storageService: IStorageService
   ) {}
 
   async listPublished(input: { pageSize: number; cursor?: string }) {
-    return this.newsRepository.listPublished(input);
+    const cacheKey = this.buildPublicListCacheKey(input);
+    const cached = this.publicNewsCache.get(cacheKey);
+    if (cached) return cached;
+
+    const fresh = await this.newsRepository.listPublished(input);
+    this.publicNewsCache.set(cacheKey, fresh);
+    return fresh;
+  }
+
+  async listPublishedForSitemap() {
+    return this.newsRepository.listPublishedForSitemap();
+  }
+
+  async getPublishedById(id: string) {
+    const news = await this.newsRepository.getById(id);
+    if (!news || news.status !== 'published') {
+      throw new AppError('News not found', 404, 'NEWS_NOT_FOUND');
+    }
+
+    return news;
   }
 
   async getPublishedBySlug(slug: string) {
@@ -58,10 +90,9 @@ export class NewsService {
   }
 
   async create(input: CreateNewsInput) {
-    const slug = await this.generateUniqueSlug(input.title);
+    const slug = await this.generateUniqueSlug(input.slug ?? input.title);
     const publishNow = input.status === 'published';
-
-    return this.newsRepository.create({
+    const created = await this.newsRepository.create({
       title: input.title,
       slug,
       excerpt: input.excerpt ?? '',
@@ -71,8 +102,12 @@ export class NewsService {
       status: input.status ?? 'draft',
       imagePath: input.imagePath ?? null,
       imageUrl: input.imageUrl ?? null,
+      imageVariants: null,
       publishedAt: publishNow ? new Date() : null
     });
+
+    this.invalidatePublicNewsCache();
+    return created;
   }
 
   async update(id: string, input: UpdateNewsInput) {
@@ -81,16 +116,18 @@ export class NewsService {
       throw new AppError('News not found', 404, 'NEWS_NOT_FOUND');
     }
 
-    const nextSlug = input.title ? await this.generateUniqueSlug(input.title, id) : current.slug;
+    const nextSlug =
+      typeof input.slug === 'string' ? await this.generateUniqueSlug(input.slug, id) : current.slug;
     const nextStatus = input.status ?? current.status;
     const shouldHavePublishedAt = nextStatus === 'published';
     const nextImagePath = input.imagePath ?? current.imagePath;
+    const nextImageVariants = input.imageVariants === undefined ? current.imageVariants : input.imageVariants;
 
     if (current.imagePath && current.imagePath !== nextImagePath) {
-      await this.storageService.deleteIfExists(current.imagePath);
+      await this.deleteNewsImageAssets(current);
     }
 
-    return this.newsRepository.update(id, {
+    const updated = await this.newsRepository.update(id, {
       title: input.title,
       slug: nextSlug,
       excerpt: input.excerpt,
@@ -100,8 +137,12 @@ export class NewsService {
       status: nextStatus,
       imagePath: input.imagePath,
       imageUrl: input.imageUrl,
+      imageVariants: nextImageVariants,
       publishedAt: shouldHavePublishedAt ? current.publishedAt ?? new Date() : null
     });
+
+    this.invalidatePublicNewsCache();
+    return updated;
   }
 
   async setPublished(id: string, published: boolean) {
@@ -110,10 +151,13 @@ export class NewsService {
       throw new AppError('News not found', 404, 'NEWS_NOT_FOUND');
     }
 
-    return this.newsRepository.update(id, {
+    const updated = await this.newsRepository.update(id, {
       status: published ? 'published' : 'draft',
       publishedAt: published ? current.publishedAt ?? new Date() : null
     });
+
+    this.invalidatePublicNewsCache();
+    return updated;
   }
 
   async delete(id: string) {
@@ -122,8 +166,9 @@ export class NewsService {
       throw new AppError('News not found', 404, 'NEWS_NOT_FOUND');
     }
 
-    await this.storageService.deleteIfExists(current.imagePath);
+    await this.deleteNewsImageAssets(current);
     await this.newsRepository.delete(id);
+    this.invalidatePublicNewsCache();
   }
 
   async uploadImage(input: { id: string; fileName: string; mimeType: string; buffer: Buffer }) {
@@ -136,23 +181,27 @@ export class NewsService {
       fileName: input.fileName,
       mimeType: input.mimeType,
       buffer: input.buffer,
-      previousImagePath: current.imagePath
+      previousImagePath: current.imagePath,
+      previousImagePaths: this.collectNewsImagePaths(current)
     });
 
-    return this.newsRepository.update(input.id, {
+    const updated = await this.newsRepository.update(input.id, {
       imagePath: uploaded.imagePath,
-      imageUrl: uploaded.imageUrl
+      imageUrl: uploaded.imageUrl,
+      imageVariants: uploaded.imageVariants ?? null
     });
+
+    this.invalidatePublicNewsCache();
+    return updated;
   }
 
-  private async generateUniqueSlug(title: string, currentId?: string): Promise<string> {
-    const baseSlug = slugify(title);
+  private async generateUniqueSlug(source: string, currentId?: string): Promise<string> {
+    const baseSlug = slugify(source);
     if (!baseSlug) {
       throw new AppError('Invalid title for slug generation', 422, 'INVALID_SLUG_SOURCE');
     }
 
     let slug = baseSlug;
-    let index = 2;
 
     while (true) {
       const existing = await this.newsRepository.getBySlug(slug);
@@ -160,8 +209,33 @@ export class NewsService {
         return slug;
       }
 
-      slug = `${baseSlug}-${index}`;
-      index += 1;
+      slug = `${baseSlug}-${slugSuffix()}`;
     }
+  }
+
+  private buildPublicListCacheKey(input: { pageSize: number; cursor?: string }) {
+    return `${input.pageSize}:${input.cursor ?? ''}`;
+  }
+
+  private invalidatePublicNewsCache() {
+    this.publicNewsCache.reset();
+  }
+
+  private collectNewsImagePaths(news: Pick<NewsEntity, 'imagePath' | 'imageVariants'>) {
+    const paths = new Set<string>();
+
+    if (news.imagePath) paths.add(news.imagePath);
+    if (news.imageVariants) {
+      paths.add(news.imageVariants.thumbnail.path);
+      paths.add(news.imageVariants.card.path);
+      paths.add(news.imageVariants.hero.path);
+    }
+
+    return [...paths];
+  }
+
+  private async deleteNewsImageAssets(news: Pick<NewsEntity, 'imagePath' | 'imageVariants'>) {
+    const paths = this.collectNewsImagePaths(news);
+    await Promise.all(paths.map((path) => this.storageService.deleteIfExists(path)));
   }
 }

@@ -32,7 +32,7 @@ export function useNewsDetail(slug?: string): UseNewsDetailResult {
     setError(null);
 
     try {
-      const response = await apiGet<ApiNewsItem | ApiNewsDetailEnvelope>(`/api/news/${slug}`);
+      const response = await apiGet<ApiNewsItem | ApiNewsDetailEnvelope>(`/api/news/slug/${slug}`);
       const envelope = response as ApiNewsDetailEnvelope;
       const payload = envelope.item ?? envelope.data ?? (response as ApiNewsItem);
       setData(payload ? normalizeNews(payload) : null);

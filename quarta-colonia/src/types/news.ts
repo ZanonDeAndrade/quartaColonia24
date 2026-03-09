@@ -15,6 +15,11 @@ export interface ApiNewsItem {
   status?: "draft" | "published" | string;
   imagePath?: string | null;
   imageUrl?: string | null;
+  imageVariants?: {
+    thumbnail?: { path?: string; url?: string; width?: number };
+    card?: { path?: string; url?: string; width?: number };
+    hero?: { path?: string; url?: string; width?: number };
+  } | null;
   coverUrl?: string | null;
   coverImage?: string | null;
   image?: string | null;
@@ -34,7 +39,15 @@ export interface PortalNewsItem {
   excerpt: string;
   content: string;
   category: string;
+  tags: string[];
   imageUrl: string | null;
+  imageVariants: {
+    thumbnail: string | null;
+    card: string | null;
+    hero: string | null;
+  };
   publishedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
   author: string;
 }

@@ -15,6 +15,7 @@ export const adminNewsListQuerySchema = z.object({
 
 export const createNewsBodySchema = z.object({
   title: z.string().trim().min(3),
+  slug: z.string().trim().min(1).optional(),
   excerpt: z.string().trim().max(400).optional().default(''),
   content: z.string().trim().min(10),
   category: z.string().trim().optional().default(''),
@@ -27,6 +28,7 @@ export const createNewsBodySchema = z.object({
 export const updateNewsBodySchema = z
   .object({
     title: z.string().trim().min(3).optional(),
+    slug: z.string().trim().min(1).optional(),
     excerpt: z.string().trim().max(400).optional(),
     content: z.string().trim().min(10).optional(),
     category: z.string().trim().optional(),

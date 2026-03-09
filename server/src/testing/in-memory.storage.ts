@@ -8,6 +8,7 @@ export class InMemoryStorageService implements IStorageService {
     mimeType: string;
     buffer: Buffer;
     previousImagePath?: string | null;
+    previousImagePaths?: string[];
   }) {
     const imagePath = `news/${input.fileName || 'image'}`;
 

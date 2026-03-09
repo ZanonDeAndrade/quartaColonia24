@@ -23,6 +23,7 @@ const serializeNews = (news: NewsEntity) => ({
   status: news.status,
   imagePath: news.imagePath,
   imageUrl: news.imageUrl,
+  imageVariants: news.imageVariants,
   publishedAt: toISOStringOrNull(news.publishedAt),
   createdAt: news.createdAt.toISOString(),
   updatedAt: news.updatedAt.toISOString()
@@ -42,6 +43,11 @@ export class NewsController {
     } catch (error) {
       this.rethrow(error);
     }
+  }
+
+  async getPublishedById(request: FastifyRequest<{ Params: { id: string } }>) {
+    const news = await this.newsService.getPublishedById(request.params.id);
+    return serializeNews(news);
   }
 
   async getPublishedBySlug(request: FastifyRequest<{ Params: { slug: string } }>) {

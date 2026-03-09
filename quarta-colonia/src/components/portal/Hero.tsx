@@ -10,7 +10,7 @@ interface HeroProps {
 
 export function Hero({ news, loading = false }: HeroProps) {
   const hasNews = Boolean(news);
-  const cover = news?.imageUrl ?? null;
+  const cover = news?.imageVariants.hero ?? news?.imageVariants.card ?? news?.imageUrl ?? null;
   const title =
     news?.title ||
     (loading ? "Carregando noticias..." : "Nenhuma noticia publicada no momento");

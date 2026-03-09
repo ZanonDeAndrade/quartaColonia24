@@ -4,6 +4,7 @@ import type { NewsItem, NewsListResponse, NewsStatus } from '../types/api';
 
 export interface SaveNewsPayload {
   title: string;
+  slug?: string;
   excerpt?: string;
   content: string;
   category?: string;

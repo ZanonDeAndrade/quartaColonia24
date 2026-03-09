@@ -22,7 +22,13 @@ export function normalizeNews(item: ApiNewsItem): PortalNewsItem {
   const content = rawContent || excerpt;
   const category = stringValue(item.category) || stringValue(item.section) || "GERAL";
   const author = stringValue(item.author) || stringValue(item.authorName) || "Redacao";
+  const thumbnailVariant = stringValue(item.imageVariants?.thumbnail?.url);
+  const cardVariant = stringValue(item.imageVariants?.card?.url);
+  const heroVariant = stringValue(item.imageVariants?.hero?.url);
   const imageUrl =
+    heroVariant ||
+    cardVariant ||
+    thumbnailVariant ||
     stringValue(item.imageUrl) ||
     stringValue(item.coverUrl) ||
     stringValue(item.coverImage) ||
@@ -37,6 +43,9 @@ export function normalizeNews(item: ApiNewsItem): PortalNewsItem {
   const rawPublishedAt =
     stringValue(item.publishedAt) || stringValue(item.publishDate) || stringValue(item.createdAt) || null;
   const publishedAt = rawPublishedAt && isValidDate(rawPublishedAt) ? rawPublishedAt : null;
+  const createdAt = stringValue(item.createdAt);
+  const updatedAt = stringValue(item.updatedAt);
+  const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag).trim()).filter(Boolean) : [];
 
   return {
     id,
@@ -45,8 +54,16 @@ export function normalizeNews(item: ApiNewsItem): PortalNewsItem {
     excerpt,
     content,
     category,
+    tags,
     imageUrl,
+    imageVariants: {
+      thumbnail: thumbnailVariant || null,
+      card: cardVariant || null,
+      hero: heroVariant || null,
+    },
     publishedAt,
+    createdAt: createdAt && isValidDate(createdAt) ? createdAt : null,
+    updatedAt: updatedAt && isValidDate(updatedAt) ? updatedAt : null,
     author,
   };
 }

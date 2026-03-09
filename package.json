@@ -12,6 +12,7 @@
     "dev:server": "npm run dev -w server",
     "dev:site": "npm run dev -w quarta-colonia",
     "dev:adm": "npm run dev -w adm",
+    "generate:slugs": "tsx scripts/generateSlugs.ts",
     "build": "npm run build -w server && npm run build -w quarta-colonia && npm run build -w adm",
     "test": "npm run test -w server"
   },

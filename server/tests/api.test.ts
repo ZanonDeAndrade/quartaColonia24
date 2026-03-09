@@ -51,7 +51,8 @@ const createTestContext = async () => {
         'https://quarta-colonia24-quarta-colonia.vercel.app',
         'https://quarta-colonia24-adm.vercel.app'
       ],
-      UPLOAD_MAX_BYTES: 1024 * 1024
+      UPLOAD_MAX_BYTES: 1024 * 1024,
+      SITE_BASE_URL: 'http://localhost:5173'
     },
     services: {
       authService,
@@ -181,6 +182,65 @@ describe('API', () => {
     const body = response.json();
     expect(body.items).toHaveLength(1);
     expect(body.items[0].status).toBe('published');
+
+    await app.close();
+  });
+
+  it('should expose published news safely by id and slug routes', async () => {
+    const { app, newsService } = await createTestContext();
+
+    const created = await newsService.create({
+      title: 'Inter deixa Gauchao',
+      excerpt: 'Resumo',
+      content: 'Conteudo completo da noticia sobre o campeonato.',
+      category: 'Esportes',
+      tags: ['futebol'],
+      status: 'published'
+    });
+
+    const byIdResponse = await app.inject({
+      method: 'GET',
+      url: `/api/news/id/${created.id}`
+    });
+    expect(byIdResponse.statusCode).toBe(200);
+    expect((byIdResponse.json() as { id: string }).id).toBe(created.id);
+
+    const bySlugResponse = await app.inject({
+      method: 'GET',
+      url: `/api/news/slug/${created.slug}`
+    });
+    expect(bySlugResponse.statusCode).toBe(200);
+    expect((bySlugResponse.json() as { slug: string }).slug).toBe(created.slug);
+
+    const missingResponse = await app.inject({
+      method: 'GET',
+      url: '/api/news/slug/noticia-inexistente'
+    });
+    expect(missingResponse.statusCode).toBe(404);
+
+    await app.close();
+  });
+
+  it('should generate sitemap.xml with published news slugs', async () => {
+    const { app, newsService } = await createTestContext();
+
+    const created = await newsService.create({
+      title: 'Politica regional eleicoes',
+      excerpt: 'Resumo',
+      content: 'Conteudo completo da noticia politica regional.',
+      category: 'Politica',
+      tags: ['eleicoes'],
+      status: 'published'
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/sitemap.xml'
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('application/xml');
+    expect(response.body).toContain(`<loc>http://localhost:5173/noticia/${created.slug}</loc>`);
 
     await app.close();
   });

@@ -20,9 +20,55 @@ import { registerPublicSponsorsRoutes } from './modules/sponsors/public-sponsors
 import { SponsorsController } from './modules/sponsors/sponsors.controller.js';
 
 interface BuildAppInput {
-  env: Pick<Env, 'CORS_ORIGINS' | 'UPLOAD_MAX_BYTES'>;
+  env: Pick<Env, 'CORS_ORIGINS' | 'UPLOAD_MAX_BYTES' | 'SITE_BASE_URL'>;
   services: AppServices;
 }
+
+const escapeXml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const buildSitemapXml = (
+  baseUrl: string,
+  entries: Array<{
+    slug: string;
+    updatedAt: Date;
+    publishedAt: Date | null;
+  }>
+) => {
+  const nowIso = new Date().toISOString();
+  const rootEntry = `  <url>\n    <loc>${escapeXml(baseUrl)}</loc>\n    <lastmod>${nowIso}</lastmod>\n    <changefreq>hourly</changefreq>\n    <priority>1.0</priority>\n  </url>`;
+
+  const newsEntries = entries
+    .map((entry) => {
+      const lastMod = (entry.updatedAt ?? entry.publishedAt ?? new Date()).toISOString();
+      const loc = `${baseUrl}/noticia/${encodeURIComponent(entry.slug)}`;
+
+      return [
+        '  <url>',
+        `    <loc>${escapeXml(loc)}</loc>`,
+        `    <lastmod>${lastMod}</lastmod>`,
+        '    <changefreq>hourly</changefreq>',
+        '    <priority>0.9</priority>',
+        '  </url>'
+      ].join('\n');
+    })
+    .join('\n');
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    rootEntry,
+    newsEntries,
+    '</urlset>'
+  ]
+    .filter(Boolean)
+    .join('\n');
+};
 
 export const buildApp = async (input: BuildAppInput) => {
   const normalizedAllowedOrigins = input.env.CORS_ORIGINS.map((origin) => normalizeOrigin(origin));
@@ -135,6 +181,14 @@ export const buildApp = async (input: BuildAppInput) => {
     },
     { prefix: '/api/admin/sponsors' }
   );
+
+  app.get('/sitemap.xml', async (_request, reply) => {
+    const entries = await input.services.newsService.listPublishedForSitemap();
+    const xml = buildSitemapXml(input.env.SITE_BASE_URL, entries);
+
+    reply.type('application/xml; charset=utf-8');
+    return reply.send(xml);
+  });
 
   app.get('/health', async () => ({ ok: true }));
 

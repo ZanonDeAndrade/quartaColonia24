@@ -10,6 +10,7 @@ import type { NewsItem, NewsStatus } from "../types/api";
 
 interface FormState {
   title: string;
+  slug: string;
   excerpt: string;
   content: string;
   tags: string;
@@ -18,6 +19,7 @@ interface FormState {
 
 const toFormState = (news: NewsItem): FormState => ({
   title: news.title,
+  slug: news.slug,
   excerpt: news.excerpt ?? "",
   content: news.content,
   tags: news.tags.join(", "),
@@ -66,6 +68,7 @@ export const AdminNewsFormPage = () => {
   const [customCategory, setCustomCategory] = useState<string>("");
   const [form, setForm] = useState<FormState>({
     title: "",
+    slug: "",
     excerpt: "",
     content: "",
     tags: "",
@@ -149,6 +152,7 @@ export const AdminNewsFormPage = () => {
     try {
       const payload: {
         title: string;
+        slug?: string;
         excerpt: string;
         content: string;
         category: string;
@@ -156,6 +160,7 @@ export const AdminNewsFormPage = () => {
         status: NewsStatus;
       } = {
         title: form.title,
+        slug: form.slug.trim() || undefined,
         excerpt: form.excerpt,
         content: form.content,
         category: resolvedCategory,
@@ -264,6 +269,19 @@ export const AdminNewsFormPage = () => {
                   onChange={(event) => setForm((previous) => ({ ...previous, title: event.target.value }))}
                   required
                   value={form.title}
+                />
+              </div>
+
+              <div>
+                <label className="adm-label" htmlFor="slug">
+                  Slug
+                </label>
+                <input
+                  id="slug"
+                  className="adm-field"
+                  onChange={(event) => setForm((previous) => ({ ...previous, slug: event.target.value }))}
+                  placeholder="gerado-automaticamente-se-vazio"
+                  value={form.slug}
                 />
               </div>
 

@@ -38,11 +38,13 @@ export function NewsCard({ item, loading = false }: NewsCardProps) {
     );
   }
 
+  const cardImage = item.imageVariants.card ?? item.imageVariants.thumbnail ?? item.imageUrl;
+
   return (
     <article className="qc-news-card">
       <div className="qc-news-image">
-        {item.imageUrl ? (
-          <img className="h-full w-full object-cover" src={item.imageUrl} alt={`Imagem da noticia ${item.title}`} loading="lazy" />
+        {cardImage ? (
+          <img className="h-full w-full object-cover" src={cardImage} alt={`Imagem da noticia ${item.title}`} loading="lazy" />
         ) : (
           <div className="qc-image-placeholder">
             <IconImage className="qc-placeholder-icon" />

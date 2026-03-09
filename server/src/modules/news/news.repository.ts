@@ -7,8 +7,20 @@ import type {
   ListPublicNewsInput,
   UpdateNewsInput
 } from '../../contracts/repositories.js';
-import type { NewsEntity, PaginationResult } from '../../types/domain.js';
+import type { NewsEntity, NewsImageVariants, PaginationResult } from '../../types/domain.js';
 import { toDate } from '../../common/time.js';
+
+interface NewsDocImageVariant {
+  path?: string;
+  url?: string;
+  width?: number;
+}
+
+interface NewsDocImageVariants {
+  thumbnail?: NewsDocImageVariant;
+  card?: NewsDocImageVariant;
+  hero?: NewsDocImageVariant;
+}
 
 interface NewsDoc {
   title: string;
@@ -20,6 +32,7 @@ interface NewsDoc {
   status: NewsEntity['status'];
   imagePath?: string | null;
   imageUrl?: string | null;
+  imageVariants?: NewsDocImageVariants | null;
   coverPath?: string | null;
   coverUrl?: string | null;
   publishedAt: unknown;
@@ -47,6 +60,23 @@ export class FirestoreNewsRepository implements INewsRepository {
       const nextCursor = ordered.length > from + input.pageSize ? items[items.length - 1]?.id ?? null : null;
 
       return { items, nextCursor };
+    } catch (error) {
+      throw this.wrapFirebaseError(error);
+    }
+  }
+
+  async listPublishedForSitemap(): Promise<Array<Pick<NewsEntity, 'slug' | 'updatedAt' | 'publishedAt'>>> {
+    try {
+      const snapshot = await this.collection.where('status', '==', 'published').get();
+      return snapshot.docs
+        .map((doc) => this.mapDoc(doc.id, doc.data()))
+        .filter((item) => Boolean(item.slug))
+        .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0))
+        .map((item) => ({
+          slug: item.slug,
+          updatedAt: item.updatedAt,
+          publishedAt: item.publishedAt
+        }));
     } catch (error) {
       throw this.wrapFirebaseError(error);
     }
@@ -182,9 +212,32 @@ export class FirestoreNewsRepository implements INewsRepository {
       status: doc.status,
       imagePath: doc.imagePath ?? doc.coverPath ?? null,
       imageUrl: doc.imageUrl ?? doc.coverUrl ?? null,
+      imageVariants: this.parseImageVariants(doc.imageVariants),
       publishedAt: doc.publishedAt ? toDate(doc.publishedAt, new Date()) : null,
       createdAt: toDate(doc.createdAt),
       updatedAt: toDate(doc.updatedAt)
+    };
+  }
+
+  private parseImageVariants(value: NewsDocImageVariants | null | undefined): NewsImageVariants | null {
+    if (!value) return null;
+
+    const thumbnail = this.parseVariant(value.thumbnail, 400);
+    const card = this.parseVariant(value.card, 800);
+    const hero = this.parseVariant(value.hero, 1600);
+
+    if (!thumbnail || !card || !hero) return null;
+    return { thumbnail, card, hero };
+  }
+
+  private parseVariant(value: NewsDocImageVariant | undefined, fallbackWidth: number) {
+    if (!value) return null;
+    if (!value.path || !value.url) return null;
+
+    return {
+      path: value.path,
+      url: value.url,
+      width: typeof value.width === 'number' && Number.isFinite(value.width) ? value.width : fallbackWidth
     };
   }
 

@@ -1,6 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { IStorageService, UploadResult } from '../../contracts/repositories.js';
+import sharp from 'sharp';
+
+const CACHE_CONTROL = 'public, max-age=31536000';
+
+const NEWS_VARIANTS = [
+  { key: 'thumbnail' as const, width: 400 },
+  { key: 'card' as const, width: 800 },
+  { key: 'hero' as const, width: 1600 }
+];
 
 export class FirebaseStorageService implements IStorageService {
   constructor(private readonly bucket: { name: string; file: (path: string) => any }) {}
@@ -10,8 +19,71 @@ export class FirebaseStorageService implements IStorageService {
     mimeType: string;
     buffer: Buffer;
     previousImagePath?: string | null;
+    previousImagePaths?: string[];
   }): Promise<UploadResult> {
-    return this.uploadImage('news', input);
+    const imageId = randomUUID();
+    const uploads = await Promise.all(
+      NEWS_VARIANTS.map(async (variant) => {
+        const outputBuffer = await sharp(input.buffer)
+          .rotate()
+          .resize({
+            width: variant.width,
+            withoutEnlargement: true
+          })
+          .webp({ quality: 82 })
+          .toBuffer();
+
+        const imagePath = path.posix.join('news', `${imageId}-${variant.key}.webp`);
+        const file = this.bucket.file(imagePath);
+
+        await file.save(outputBuffer, {
+          resumable: false,
+          metadata: {
+            contentType: 'image/webp',
+            cacheControl: CACHE_CONTROL
+          }
+        });
+
+        return {
+          key: variant.key,
+          width: variant.width,
+          path: imagePath,
+          url: this.buildPublicUrl(imagePath)
+        };
+      })
+    );
+
+    await this.deletePreviousPaths(input.previousImagePath, input.previousImagePaths);
+
+    const thumbnail = uploads.find((item) => item.key === 'thumbnail');
+    const card = uploads.find((item) => item.key === 'card');
+    const hero = uploads.find((item) => item.key === 'hero');
+
+    if (!thumbnail || !card || !hero) {
+      throw new Error('Failed to process image variants');
+    }
+
+    return {
+      imagePath: hero.path,
+      imageUrl: hero.url,
+      imageVariants: {
+        thumbnail: {
+          path: thumbnail.path,
+          url: thumbnail.url,
+          width: thumbnail.width
+        },
+        card: {
+          path: card.path,
+          url: card.url,
+          width: card.width
+        },
+        hero: {
+          path: hero.path,
+          url: hero.url,
+          width: hero.width
+        }
+      }
+    };
   }
 
   async uploadSponsorImage(input: {
@@ -54,6 +126,10 @@ export class FirebaseStorageService implements IStorageService {
     return `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodeURIComponent(imagePath)}?alt=media&token=${downloadToken}`;
   }
 
+  private buildPublicUrl(imagePath: string) {
+    return `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodeURIComponent(imagePath)}?alt=media`;
+  }
+
   private async uploadImage(
     folder: 'news' | 'sponsors' | 'columns',
     input: {
@@ -74,7 +150,7 @@ export class FirebaseStorageService implements IStorageService {
       resumable: false,
       metadata: {
         contentType: input.mimeType,
-        cacheControl: 'public,max-age=86400',
+        cacheControl: CACHE_CONTROL,
         metadata: {
           firebaseStorageDownloadTokens: downloadToken
         }
@@ -89,5 +165,15 @@ export class FirebaseStorageService implements IStorageService {
       imagePath,
       imageUrl: this.buildDownloadUrl(imagePath, downloadToken)
     };
+  }
+
+  private async deletePreviousPaths(previousImagePath?: string | null, previousImagePaths?: string[]) {
+    const paths = new Set<string>();
+    if (previousImagePath) paths.add(previousImagePath);
+    for (const pathValue of previousImagePaths ?? []) {
+      if (pathValue) paths.add(pathValue);
+    }
+
+    await Promise.all([...paths].map((pathValue) => this.deleteIfExists(pathValue)));
   }
 }

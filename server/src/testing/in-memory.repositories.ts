@@ -35,6 +35,17 @@ export class InMemoryNewsRepository implements INewsRepository {
     return [...this.items.values()].find((item) => item.slug === slug && item.status === 'published') ?? null;
   }
 
+  async listPublishedForSitemap(): Promise<Array<Pick<NewsEntity, 'slug' | 'updatedAt' | 'publishedAt'>>> {
+    return [...this.items.values()]
+      .filter((item) => item.status === 'published')
+      .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0))
+      .map((item) => ({
+        slug: item.slug,
+        updatedAt: item.updatedAt,
+        publishedAt: item.publishedAt
+      }));
+  }
+
   async listAdmin(input: ListAdminNewsInput): Promise<PaginationResult<NewsEntity>> {
     let items = [...this.items.values()].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
@@ -75,6 +86,7 @@ export class InMemoryNewsRepository implements INewsRepository {
       status: input.status,
       imagePath: input.imagePath,
       imageUrl: input.imageUrl,
+      imageVariants: input.imageVariants,
       publishedAt: input.publishedAt,
       createdAt: now,
       updatedAt: now

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Footer } from "../components/portal/Footer";
 import { Header } from "../components/portal/Header";
@@ -13,6 +13,44 @@ import { useSponsors } from "../hooks/useSponsors";
 import { getCategoryBadgeClass, getCategoryLabel } from "../lib/category";
 import { formatMetaDate } from "../lib/date";
 
+const SITE_NAME = "Quarta Colonia 24h";
+const DEFAULT_DESCRIPTION = "Cobertura regional em tempo real com noticias da Quarta Colonia.";
+
+const getOrCreateMetaTag = (attr: "name" | "property", key: string) => {
+  let element = document.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
+  const created = !element;
+
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attr, key);
+    document.head.appendChild(element);
+  }
+
+  return { element, created };
+};
+
+const getOrCreateCanonicalTag = () => {
+  let element = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  const created = !element;
+
+  if (!element) {
+    element = document.createElement("link");
+    element.setAttribute("rel", "canonical");
+    document.head.appendChild(element);
+  }
+
+  return { element, created };
+};
+
+const stripHtml = (value: string) => value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+const buildDescription = (excerpt: string, content: string) => {
+  const source = excerpt.trim() || stripHtml(content);
+  if (!source) return DEFAULT_DESCRIPTION;
+  if (source.length <= 170) return source;
+  return `${source.slice(0, 167).trimEnd()}...`;
+};
+
 export function NewsDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -23,6 +61,59 @@ export function NewsDetail() {
 
   const relatedNews = useMemo(() => feed.filter((item) => item.slug !== slug).slice(0, 4), [feed, slug]);
   const opinionHighlight = useMemo(() => columns[0] ?? null, [columns]);
+  const siteBaseUrl = useMemo(
+    () => (import.meta.env.VITE_SITE_URL ?? window.location.origin).replace(/\/+$/, ""),
+    [],
+  );
+  const newsUrl = useMemo(
+    () => (slug ? `${siteBaseUrl}/noticia/${encodeURIComponent(slug)}` : siteBaseUrl),
+    [siteBaseUrl, slug],
+  );
+  const seoDescription = useMemo(
+    () => buildDescription(data?.excerpt ?? "", data?.content ?? ""),
+    [data?.content, data?.excerpt],
+  );
+  const seoImage = useMemo(
+    () => data?.imageVariants.hero ?? data?.imageVariants.card ?? data?.imageUrl ?? "",
+    [data?.imageUrl, data?.imageVariants.card, data?.imageVariants.hero],
+  );
+
+  const shareLinks = useMemo(() => {
+    if (!data) return null;
+
+    const encodedUrl = encodeURIComponent(newsUrl);
+    const encodedTitle = encodeURIComponent(data.title);
+    const encodedWhatsApp = encodeURIComponent(`${data.title} ${newsUrl}`);
+
+    return {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      twitter: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+      whatsapp: `https://wa.me/?text=${encodedWhatsApp}`,
+    };
+  }, [data, newsUrl]);
+
+  const structuredData = useMemo(() => {
+    if (!data) return null;
+
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      headline: data.title,
+      image: seoImage ? [seoImage] : undefined,
+      datePublished: data.createdAt ?? data.publishedAt ?? new Date().toISOString(),
+      dateModified: data.updatedAt ?? data.publishedAt ?? data.createdAt ?? new Date().toISOString(),
+      author: {
+        "@type": "Organization",
+        name: SITE_NAME,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: SITE_NAME,
+      },
+      mainEntityOfPage: newsUrl,
+      description: seoDescription,
+    });
+  }, [data, newsUrl, seoDescription, seoImage]);
 
   const urgentText = useMemo(() => {
     if (feed.length === 0) {
@@ -34,8 +125,80 @@ export function NewsDetail() {
       .join(" | ");
   }, [feed, data?.title]);
 
+  useEffect(() => {
+    const previousTitle = document.title;
+    const tracked: Array<{ element: HTMLElement; created: boolean; previousValue: string | null; attribute: "content" | "href" }> = [];
+
+    const setMeta = (attr: "name" | "property", key: string, content: string) => {
+      const { element, created } = getOrCreateMetaTag(attr, key);
+      tracked.push({
+        element,
+        created,
+        previousValue: element.getAttribute("content"),
+        attribute: "content",
+      });
+      element.setAttribute("content", content);
+    };
+
+    const setCanonical = (href: string) => {
+      const { element, created } = getOrCreateCanonicalTag();
+      tracked.push({
+        element,
+        created,
+        previousValue: element.getAttribute("href"),
+        attribute: "href",
+      });
+      element.setAttribute("href", href);
+    };
+
+    if (data) {
+      document.title = `${data.title} | ${SITE_NAME}`;
+      setMeta("name", "description", seoDescription);
+      setMeta("property", "og:title", data.title);
+      setMeta("property", "og:description", seoDescription);
+      setMeta("property", "og:image", seoImage);
+      setMeta("property", "og:type", "article");
+      setMeta("property", "og:url", newsUrl);
+      setCanonical(newsUrl);
+    } else {
+      document.title = `Noticia | ${SITE_NAME}`;
+      setMeta("name", "description", DEFAULT_DESCRIPTION);
+      setMeta("property", "og:title", `Noticia | ${SITE_NAME}`);
+      setMeta("property", "og:description", DEFAULT_DESCRIPTION);
+      setMeta("property", "og:image", "");
+      setMeta("property", "og:type", "article");
+      setMeta("property", "og:url", newsUrl);
+      setCanonical(newsUrl);
+    }
+
+    return () => {
+      document.title = previousTitle;
+
+      tracked.forEach(({ element, created, previousValue, attribute }) => {
+        if (created) {
+          element.remove();
+          return;
+        }
+
+        if (previousValue === null) {
+          element.removeAttribute(attribute);
+          return;
+        }
+
+        element.setAttribute(attribute, previousValue);
+      });
+    };
+  }, [data, newsUrl, seoDescription, seoImage]);
+
   return (
     <div className="qc-page">
+      {structuredData ? (
+        <script
+          dangerouslySetInnerHTML={{ __html: structuredData }}
+          type="application/ld+json"
+        />
+      ) : null}
+
       <Header onToggleMenu={() => setMobileMenuOpen((previous) => !previous)} urgentText={urgentText} />
 
       {mobileMenuOpen ? (
@@ -91,17 +254,32 @@ export function NewsDetail() {
                     <span>{formatMetaDate(data.publishedAt)}</span>
                   </div>
 
-                  {data.imageUrl ? (
+                  {data.imageVariants.hero ?? data.imageUrl ? (
                     <img
                       alt={`Imagem principal da noticia ${data.title}`}
                       className="qc-article-cover object-cover"
                       loading="lazy"
-                      src={data.imageUrl}
+                      src={data.imageVariants.hero ?? data.imageUrl ?? ""}
                     />
                   ) : null}
 
                   <p className="qc-article-excerpt">{data.excerpt}</p>
                   <div className="qc-article-content">{data.content || "Conteudo da noticia indisponivel no momento."}</div>
+
+                  {shareLinks ? (
+                    <section className="qc-share-strip" aria-label="Compartilhar noticia">
+                      <span>Compartilhe:</span>
+                      <a href={shareLinks.facebook} rel="noopener noreferrer" target="_blank">
+                        Facebook
+                      </a>
+                      <a href={shareLinks.twitter} rel="noopener noreferrer" target="_blank">
+                        Twitter
+                      </a>
+                      <a href={shareLinks.whatsapp} rel="noopener noreferrer" target="_blank">
+                        WhatsApp
+                      </a>
+                    </section>
+                  ) : null}
                 </article>
               ) : null}
 

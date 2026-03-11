@@ -158,6 +158,57 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+.adm-rich-editor-content .ProseMirror {
+  min-height: 300px;
+  outline: none;
+}
+
+.adm-rich-editor-content .ProseMirror p {
+  margin: 0 0 10px;
+}
+
+.adm-rich-editor-content .ProseMirror h1,
+.adm-rich-editor-content .ProseMirror h2,
+.adm-rich-editor-content .ProseMirror h3 {
+  margin: 12px 0 8px;
+  line-height: 1.2;
+  color: hsl(var(--portal-text));
+}
+
+.adm-rich-editor-content .ProseMirror h1 {
+  font-size: 32px;
+}
+
+.adm-rich-editor-content .ProseMirror h2 {
+  font-size: 26px;
+}
+
+.adm-rich-editor-content .ProseMirror h3 {
+  font-size: 22px;
+}
+
+.adm-rich-editor-content .ProseMirror ul,
+.adm-rich-editor-content .ProseMirror ol {
+  margin: 8px 0 10px;
+  padding-left: 22px;
+}
+
+.adm-rich-editor-content .ProseMirror blockquote {
+  margin: 10px 0;
+  border-left: 4px solid hsl(var(--border));
+  padding-left: 12px;
+  color: hsl(var(--portal-text-muted));
+}
+
+.adm-rich-editor-content .ProseMirror a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+.adm-rich-editor-content .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
 .adm-file-field {
   padding: 8px 10px;
 }

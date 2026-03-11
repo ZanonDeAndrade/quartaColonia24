@@ -11,6 +11,12 @@
   "dependencies": {
     "@repo/api": "*",
     "@repo/theme": "*",
+    "@tiptap/extension-link": "^3.20.1",
+    "@tiptap/extension-text-align": "^3.20.1",
+    "@tiptap/extension-text-style": "^3.20.1",
+    "@tiptap/extension-underline": "^3.20.1",
+    "@tiptap/react": "^3.20.1",
+    "@tiptap/starter-kit": "^3.20.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1"

@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AdminShell } from "../components/admin/AdminShell";
+import { RichTextEditor } from "../components/editor/RichTextEditor";
 import { useToast } from "../components/ui/toast";
 import { OTHER_CATEGORY_VALUE, NEWS_CATEGORIES, NEWS_STATUS_OPTIONS } from "../constants/news";
 import { useAuth } from "../context/AuthContext";
@@ -10,7 +11,6 @@ import type { NewsItem, NewsStatus } from "../types/api";
 
 interface FormState {
   title: string;
-  slug: string;
   excerpt: string;
   content: string;
   tags: string;
@@ -19,7 +19,6 @@ interface FormState {
 
 const toFormState = (news: NewsItem): FormState => ({
   title: news.title,
-  slug: news.slug,
   excerpt: news.excerpt ?? "",
   content: news.content,
   tags: news.tags.join(", "),
@@ -48,6 +47,15 @@ const hydrateCategoryFields = (category: string | null | undefined) => {
   };
 };
 
+const stripHtmlContent = (value: string) =>
+  value
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export const AdminNewsFormPage = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -68,11 +76,10 @@ export const AdminNewsFormPage = () => {
   const [customCategory, setCustomCategory] = useState<string>("");
   const [form, setForm] = useState<FormState>({
     title: "",
-    slug: "",
     excerpt: "",
     content: "",
     tags: "",
-    status: "draft",
+    status: "published",
   });
 
   const tagsArray = useMemo(
@@ -147,12 +154,19 @@ export const AdminNewsFormPage = () => {
       return;
     }
 
+    const plainContent = stripHtmlContent(form.content);
+    if (plainContent.length < 10) {
+      const message = "Conteudo obrigatorio. Escreva pelo menos 10 caracteres no editor.";
+      setError(message);
+      toast({ title: "Conteudo invalido", description: message, variant: "error" });
+      return;
+    }
+
     setSaving(true);
 
     try {
       const payload: {
         title: string;
-        slug?: string;
         excerpt: string;
         content: string;
         category: string;
@@ -160,7 +174,6 @@ export const AdminNewsFormPage = () => {
         status: NewsStatus;
       } = {
         title: form.title,
-        slug: form.slug.trim() || undefined,
         excerpt: form.excerpt,
         content: form.content,
         category: resolvedCategory,
@@ -273,19 +286,6 @@ export const AdminNewsFormPage = () => {
               </div>
 
               <div>
-                <label className="adm-label" htmlFor="slug">
-                  Slug
-                </label>
-                <input
-                  id="slug"
-                  className="adm-field"
-                  onChange={(event) => setForm((previous) => ({ ...previous, slug: event.target.value }))}
-                  placeholder="gerado-automaticamente-se-vazio"
-                  value={form.slug}
-                />
-              </div>
-
-              <div>
                 <label className="adm-label" htmlFor="excerpt">
                   Resumo
                 </label>
@@ -302,12 +302,11 @@ export const AdminNewsFormPage = () => {
                 <label className="adm-label" htmlFor="content">
                   Conteudo
                 </label>
-                <textarea
+                <RichTextEditor
                   id="content"
-                  className="adm-field adm-textarea adm-content-field"
-                  onChange={(event) => setForm((previous) => ({ ...previous, content: event.target.value }))}
+                  onChange={(html) => setForm((previous) => ({ ...previous, content: html }))}
+                  placeholder="O conteudo sera salvo em HTML para renderizacao no portal."
                   required
-                  rows={12}
                   value={form.content}
                 />
               </div>

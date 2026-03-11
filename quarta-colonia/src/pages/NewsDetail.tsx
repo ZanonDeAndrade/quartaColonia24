@@ -12,6 +12,7 @@ import { usePublishedNews } from "../hooks/usePublishedNews";
 import { useSponsors } from "../hooks/useSponsors";
 import { getCategoryBadgeClass, getCategoryLabel } from "../lib/category";
 import { formatMetaDate } from "../lib/date";
+import { sanitizeHtml, stripHtml } from "../lib/html";
 
 const SITE_NAME = "Quarta Colonia 24h";
 const DEFAULT_DESCRIPTION = "Cobertura regional em tempo real com noticias da Quarta Colonia.";
@@ -41,8 +42,6 @@ const getOrCreateCanonicalTag = () => {
 
   return { element, created };
 };
-
-const stripHtml = (value: string) => value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
 const buildDescription = (excerpt: string, content: string) => {
   const source = excerpt.trim() || stripHtml(content);
@@ -77,6 +76,7 @@ export function NewsDetail() {
     () => data?.imageVariants.hero ?? data?.imageUrl ?? "",
     [data?.imageUrl, data?.imageVariants.hero],
   );
+  const safeContent = useMemo(() => sanitizeHtml(data?.content ?? ""), [data?.content]);
 
   const shareLinks = useMemo(() => {
     if (!data) return null;
@@ -264,7 +264,12 @@ export function NewsDetail() {
                   ) : null}
 
                   <p className="qc-article-excerpt">{data.excerpt}</p>
-                  <div className="qc-article-content">{data.content || "Conteudo da noticia indisponivel no momento."}</div>
+                  <div
+                    className="qc-article-content"
+                    dangerouslySetInnerHTML={{
+                      __html: safeContent || "<p>Conteudo da noticia indisponivel no momento.</p>",
+                    }}
+                  />
 
                   {shareLinks ? (
                     <section className="qc-share-strip" aria-label="Compartilhar noticia">

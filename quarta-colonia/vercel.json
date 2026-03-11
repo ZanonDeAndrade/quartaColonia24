@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/noticia/(.*)", "destination": "/index.html" },
+    { "source": "/colunas", "destination": "/index.html" },
+    { "source": "/colunas/(.*)", "destination": "/index.html" }
+  ]
+}

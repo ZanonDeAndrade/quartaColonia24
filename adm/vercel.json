@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/news", "destination": "/index.html" },
+    { "source": "/news/(.*)", "destination": "/index.html" },
+    { "source": "/columns", "destination": "/index.html" },
+    { "source": "/columns/(.*)", "destination": "/index.html" },
+    { "source": "/sponsors", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" }
+  ]
+}

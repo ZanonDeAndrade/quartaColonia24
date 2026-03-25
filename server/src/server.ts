@@ -7,6 +7,7 @@ import { buildApp } from './app.js';
 const DEFAULT_PORT = 3000;
 const DEFAULT_HOST = '0.0.0.0';
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ['SIGTERM', 'SIGINT'];
+const REQUIRED_ROUTE_MARKERS = ['/health', '/api/news', '/api/columns', '/api/sponsors'];
 
 const resolvePort = (configuredPort: number) => {
   const runtimePort = Number.parseInt(process.env.PORT ?? '', 10);
@@ -45,10 +46,26 @@ const registerShutdownHandlers = (app: FastifyInstance) => {
   }
 };
 
+const assertRoutesLoaded = (app: FastifyInstance) => {
+  const routesTree = app.printRoutes({ commonPrefix: false });
+
+  console.log('ROUTES LOADED:');
+  console.log(routesTree);
+
+  const missingRoutes = REQUIRED_ROUTE_MARKERS.filter((route) => !routesTree.includes(route));
+  if (missingRoutes.length > 0) {
+    throw new Error(`Required routes were not registered before startup: ${missingRoutes.join(', ')}`);
+  }
+
+  return routesTree;
+};
+
 export const startServer = async () => {
   let app: FastifyInstance | null = null;
 
   try {
+    console.log('SERVER STARTING');
+    console.log('ENV:', process.env.NODE_ENV);
     console.log('Loading backend environment and services');
     const env = getEnv();
     const port = resolvePort(env.PORT);
@@ -66,7 +83,8 @@ export const startServer = async () => {
     registerShutdownHandlers(app);
     await app.ready();
 
-    app.log.info({ routes: app.printRoutes({ commonPrefix: false }) }, 'registered routes');
+    const routesTree = assertRoutesLoaded(app);
+    app.log.info({ routes: routesTree }, 'registered routes');
 
     await app.listen({ port, host: DEFAULT_HOST });
     app.log.info({ host: DEFAULT_HOST, port, environment: env.NODE_ENV }, 'API running');

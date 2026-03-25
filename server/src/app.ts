@@ -117,6 +117,7 @@ export const buildApp = async (input: BuildAppInput) => {
       fileSize: input.env.UPLOAD_MAX_BYTES
     }
   });
+  app.log.info('Registering health routes');
   await app.register(healthRoutes);
 
   const authController = new AuthController(input.services.authService);

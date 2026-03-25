@@ -15,7 +15,8 @@
     "generate:slugs": "tsx scripts/generateSlugs.ts",
     "fix:news-images": "tsx scripts/fix-news-image-urls.ts",
     "build": "npm run build -w server && npm run build -w quarta-colonia && npm run build -w adm",
-    "test": "npm run test -w server"
+    "test": "npm run test -w server",
+    "deploy:cloudrun": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloud-run.ps1"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

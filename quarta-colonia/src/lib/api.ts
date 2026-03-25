@@ -1,11 +1,11 @@
-const DEFAULT_API_URL = "http://localhost:3005";
+const DEFAULT_API_URL = 'https://quarta-colonia-755008866679.southamerica-east1.run.app';
 
-function getBaseUrl() {
-  return (import.meta.env.VITE_API_URL ?? DEFAULT_API_URL).replace(/\/+$/, "");
+export function getApiBaseUrl() {
+  return (import.meta.env.VITE_API_URL ?? DEFAULT_API_URL).replace(/\/+$/, '');
 }
 
 function buildApiUrl(path: string) {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getApiBaseUrl();
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
   if (baseUrl.endsWith("/api") && normalizedPath.startsWith("/api/")) {

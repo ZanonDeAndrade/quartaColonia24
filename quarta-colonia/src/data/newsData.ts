@@ -1,5 +1,6 @@
 import * as legacy from './newsData.original';
 export * from './newsData.original';
+import { getApiBaseUrl } from '../lib/api';
 
 
 type ApiNewsItem = {
@@ -22,7 +23,7 @@ type ApiNewsResponse = {
   items?: ApiNewsItem[];
 };
 
-const API_URL = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:3005';
+const API_URL = getApiBaseUrl();
 
 const toDateLabel = (value?: string | null) => {
   if (!value) return '';

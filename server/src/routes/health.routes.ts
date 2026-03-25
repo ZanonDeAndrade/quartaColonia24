@@ -1,10 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
 export const healthRoutes = async (app: FastifyInstance) => {
-  // Endpoint leve para monitoramento externo e keep-alive no Render.
-  app.get('/health', async () => ({
-    status: 'ok',
-    uptime: process.uptime(),
-    timestamp: Date.now()
-  }));
+  app.get('/health', async (_request, reply) => {
+    return reply.status(200).send({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: Date.now()
+    });
+  });
 };

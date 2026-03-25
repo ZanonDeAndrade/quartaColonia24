@@ -1,0 +1,32 @@
+# Keep the monorepo Docker context focused on the backend workspace.
+**
+
+!Dockerfile
+!package.json
+!package-lock.json
+!server/
+!server/package.json
+!server/tsconfig.json
+!server/src/
+!server/src/**
+!adm/
+!adm/package.json
+!quarta-colonia/
+!quarta-colonia/package.json
+!packages/
+!packages/api/
+!packages/api/package.json
+!packages/theme/
+!packages/theme/package.json
+!packages/ui/
+!packages/ui/package.json
+
+# Never send generated or sensitive files to the build context.
+**/node_modules
+**/dist
+*.log
+**/*.log
+.env
+.env.*
+**/.env
+**/.env.*

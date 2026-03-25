@@ -1,4 +1,5 @@
 import { api } from './api-client';
+import { getApiBaseUrl } from './api-base-url';
 import { tokenStorage } from './token-storage';
 import type { NewsItem, NewsListResponse, NewsStatus } from '../types/api';
 
@@ -44,7 +45,7 @@ export const newsService = {
   },
   async remove(id: string) {
     const accessToken = tokenStorage.getAccessToken();
-    const response = await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3005'}/api/admin/news/${id}`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/admin/news/${id}`, {
       method: 'DELETE',
       headers: accessToken
         ? {

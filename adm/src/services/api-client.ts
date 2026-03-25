@@ -1,8 +1,9 @@
 import { createApiClient } from '@repo/api';
+import { getApiBaseUrl } from './api-base-url';
 import { tokenStorage } from './token-storage';
 
 export const api = createApiClient({
-  baseUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:3005',
+  baseUrl: getApiBaseUrl(),
   getAccessToken: () => tokenStorage.getAccessToken(),
   getRefreshToken: () => tokenStorage.getRefreshToken(),
   setTokens: (tokens) => tokenStorage.setTokens(tokens),

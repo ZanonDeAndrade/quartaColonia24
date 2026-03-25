@@ -7,6 +7,7 @@ import type { Env } from './config/env.js';
 import { isAllowedOrigin, normalizeOrigin } from './config/cors.js';
 import { isAppError } from './common/errors.js';
 import type { AppServices } from './factories/create-services.js';
+import { healthRoutes } from './routes/health.routes.js';
 import { AuthController } from './modules/auth/auth.controller.js';
 import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import { registerAdminColumnsRoutes } from './modules/columns/admin-columns.routes.js';
@@ -112,6 +113,7 @@ export const buildApp = async (input: BuildAppInput) => {
       fileSize: input.env.UPLOAD_MAX_BYTES
     }
   });
+  await app.register(healthRoutes);
 
   const authController = new AuthController(input.services.authService);
   const newsController = new NewsController(input.services.newsService);

@@ -107,6 +107,22 @@ describe('API', () => {
     await app.close();
   });
 
+  it('should expose a healthcheck endpoint', async () => {
+    const { app } = await createTestContext();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/health'
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      status: 'ok'
+    });
+
+    await app.close();
+  });
+
   it('should return fixed admin profile on /api/auth/me', async () => {
     const { app, adminPassword } = await createTestContext();
     const { accessToken } = await loginAsAdmin(app, adminPassword);

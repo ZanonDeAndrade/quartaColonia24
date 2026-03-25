@@ -7,7 +7,7 @@ Frontend Vite + React + TypeScript + Tailwind + shadcn tokens locais.
 Crie `quarta-colonia/.env`:
 
 ```env
-VITE_API_URL=http://localhost:3005
+VITE_API_URL=https://quarta-colonia-755008866679.southamerica-east1.run.app
 ```
 
 ## Desenvolvimento

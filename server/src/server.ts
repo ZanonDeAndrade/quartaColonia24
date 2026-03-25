@@ -4,19 +4,10 @@ import { getEnv } from './config/env.js';
 import { createDefaultServices } from './factories/create-services.js';
 import { buildApp } from './app.js';
 
-const DEFAULT_PORT = 3000;
+const DEFAULT_PORT = 8080;
 const DEFAULT_HOST = '0.0.0.0';
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ['SIGTERM', 'SIGINT'];
 const REQUIRED_ROUTE_MARKERS = ['/health', '/api/news', '/api/columns', '/api/sponsors'];
-
-const resolvePort = (configuredPort: number) => {
-  const runtimePort = Number.parseInt(process.env.PORT ?? '', 10);
-  if (Number.isInteger(runtimePort) && runtimePort > 0) {
-    return runtimePort;
-  }
-
-  return configuredPort || DEFAULT_PORT;
-};
 
 const registerShutdownHandlers = (app: FastifyInstance) => {
   let isShuttingDown = false;
@@ -68,7 +59,7 @@ export const startServer = async () => {
     console.log('ENV:', process.env.NODE_ENV);
     console.log('Loading backend environment and services');
     const env = getEnv();
-    const port = resolvePort(env.PORT);
+    const port = Number(process.env.PORT) || DEFAULT_PORT;
     const services = createDefaultServices(env);
 
     app = await buildApp({
@@ -87,6 +78,7 @@ export const startServer = async () => {
     app.log.info({ routes: routesTree }, 'registered routes');
 
     await app.listen({ port, host: DEFAULT_HOST });
+    console.log(`SERVER BOUND TO http://${DEFAULT_HOST}:${port}`);
     app.log.info({ host: DEFAULT_HOST, port, environment: env.NODE_ENV }, 'API running');
 
     return app;

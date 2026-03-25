@@ -49,6 +49,7 @@ export const startServer = async () => {
   let app: FastifyInstance | null = null;
 
   try {
+    console.log('Loading backend environment and services');
     const env = getEnv();
     const port = resolvePort(env.PORT);
     const services = createDefaultServices(env);
@@ -63,6 +64,9 @@ export const startServer = async () => {
     });
 
     registerShutdownHandlers(app);
+    await app.ready();
+
+    app.log.info({ routes: app.printRoutes({ commonPrefix: false }) }, 'registered routes');
 
     await app.listen({ port, host: DEFAULT_HOST });
     app.log.info({ host: DEFAULT_HOST, port, environment: env.NODE_ENV }, 'API running');
@@ -79,5 +83,3 @@ export const startServer = async () => {
     process.exit(1);
   }
 };
-
-void startServer();

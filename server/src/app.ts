@@ -72,6 +72,7 @@ const buildSitemapXml = (
 };
 
 export const buildApp = async (input: BuildAppInput) => {
+  console.log('Creating Fastify app and registering middleware/routes');
   const normalizedAllowedOrigins = input.env.CORS_ORIGINS.map((origin) => normalizeOrigin(origin));
 
   const app = Fastify({
@@ -123,8 +124,11 @@ export const buildApp = async (input: BuildAppInput) => {
   const columnsController = new ColumnsController(input.services.columnsService);
   const sponsorsController = new SponsorsController(input.services.sponsorsService);
 
+  app.log.info('Registering API routes');
+
   await app.register(
     async (scope) => {
+      scope.log.info('Registering auth routes');
       await registerAuthRoutes(scope, {
         controller: authController,
         tokenService: input.services.tokenService
@@ -135,6 +139,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(
     async (scope) => {
+      scope.log.info('Registering public news routes');
       await registerPublicNewsRoutes(scope, newsController);
     },
     { prefix: '/api/news' }
@@ -142,6 +147,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(
     async (scope) => {
+      scope.log.info('Registering admin news routes');
       await registerAdminNewsRoutes(scope, {
         controller: newsController,
         tokenService: input.services.tokenService,
@@ -153,6 +159,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(
     async (scope) => {
+      scope.log.info('Registering public columns routes');
       await registerPublicColumnsRoutes(scope, columnsController);
     },
     { prefix: '/api/columns' }
@@ -160,6 +167,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(
     async (scope) => {
+      scope.log.info('Registering admin columns routes');
       await registerAdminColumnsRoutes(scope, {
         controller: columnsController,
         tokenService: input.services.tokenService,
@@ -171,6 +179,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(
     async (scope) => {
+      scope.log.info('Registering public sponsors routes');
       await registerPublicSponsorsRoutes(scope, sponsorsController);
     },
     { prefix: '/api/sponsors' }
@@ -178,6 +187,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(
     async (scope) => {
+      scope.log.info('Registering admin sponsors routes');
       await registerAdminSponsorsRoutes(scope, {
         controller: sponsorsController,
         tokenService: input.services.tokenService,

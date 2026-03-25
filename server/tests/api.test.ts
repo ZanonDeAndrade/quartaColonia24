@@ -49,7 +49,8 @@ const createTestContext = async () => {
         'http://localhost:5173',
         'http://localhost:5174',
         'https://quarta-colonia24-quarta-colonia.vercel.app',
-        'https://quarta-colonia24-adm.vercel.app'
+        'https://quarta-colonia24-adm.vercel.app',
+        'https://quartacolonia24horas.com.br'
       ],
       UPLOAD_MAX_BYTES: 1024 * 1024,
       SITE_BASE_URL: 'http://localhost:5173'
@@ -266,7 +267,9 @@ describe('API', () => {
     const origins = [
       'http://localhost:5174',
       'https://quarta-colonia24-quarta-colonia.vercel.app',
-      'https://admin-quarta-colonia.onrender.com'
+      'https://admin-quarta-colonia.onrender.com',
+      'https://quarta-colonia24-adm.vercel.app',
+      'https://quartacolonia24horas.com.br'
     ];
     const endpoints = ['/api/news', '/api/columns', '/api/sponsors'];
 

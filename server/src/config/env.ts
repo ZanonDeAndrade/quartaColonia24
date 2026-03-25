@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { parseAllowedOrigins } from './cors.js';
+import { parseAllowedOrigins, resolveAllowedOriginsEnvValue } from './cors.js';
 
 const rawEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -24,6 +24,7 @@ const rawEnvSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
   SITE_BASE_URL: z.string().url().default('http://localhost:5173'),
+  ALLOWED_ORIGINS: z.string().optional(),
   CORS_ORIGINS: z.string().optional(),
   UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(5 * 1024 * 1024)
 });
@@ -67,7 +68,13 @@ export const getEnv = (): Env => {
     );
   }
 
-  const corsOrigins = parseAllowedOrigins(parsed.data.CORS_ORIGINS);
+  const corsOrigins = parseAllowedOrigins(
+    resolveAllowedOriginsEnvValue({
+      ALLOWED_ORIGINS: parsed.data.ALLOWED_ORIGINS,
+      CORS_ORIGINS: parsed.data.CORS_ORIGINS
+    })
+  );
+  console.log('Allowed origins:', corsOrigins);
 
   cachedEnv = {
     NODE_ENV: parsed.data.NODE_ENV,

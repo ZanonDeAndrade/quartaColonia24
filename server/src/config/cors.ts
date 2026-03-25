@@ -13,6 +13,15 @@ const renderOriginPattern = /^https:\/\/[a-z0-9-]+\.onrender\.com$/i;
 
 export const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '');
 
+export const resolveAllowedOriginsEnvValue = (input: {
+  ALLOWED_ORIGINS?: string;
+  CORS_ORIGINS?: string;
+}): string =>
+  [input.ALLOWED_ORIGINS, input.CORS_ORIGINS]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(',');
+
 export const parseAllowedOrigins = (rawOrigins?: string): string[] => {
   const fromEnv = (rawOrigins ?? '')
     .split(',')
@@ -27,7 +36,7 @@ export const parseAllowedOrigins = (rawOrigins?: string): string[] => {
   const invalidOrigin = uniqueOrigins.find((origin) => !originPattern.test(origin));
   if (invalidOrigin) {
     throw new Error(
-      `Invalid environment variables. Check server/.env. Details: CORS_ORIGINS contains invalid origin "${invalidOrigin}".`
+      `Invalid environment variables. Check server/.env. Details: ALLOWED_ORIGINS/CORS_ORIGINS contains invalid origin "${invalidOrigin}".`
     );
   }
 

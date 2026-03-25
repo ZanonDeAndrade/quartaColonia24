@@ -82,6 +82,7 @@ export const buildApp = async (input: BuildAppInput) => {
 
   await app.register(helmet);
   await app.register(cors, {
+    hook: 'onRequest',
     origin: (origin, callback) => {
       if (!origin) {
         callback(null, true);
@@ -100,6 +101,8 @@ export const buildApp = async (input: BuildAppInput) => {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
+    preflight: true,
+    strictPreflight: true,
     optionsSuccessStatus: 204
   });
   await app.register(rateLimit, {
